@@ -2,8 +2,17 @@
 # PROJECT   : Vimeo Video Bulk Downloader
 # TEAM      : Econ Engineering Team
 # PURPOSE   : Migrate ~5,000 Vimeo video files to local / external storage
-# VERSION   : 1.0.0
+# VERSION   : 1.2.0
 # DATE      : March 2026
+# =============================================================================
+# CHANGELOG :
+#   v1.0.0 — Initial release
+#   v1.1.0 — Updated column names to match real CSV (Video ID, Video Title,
+#             Download URL). Added verbose error logging. Added startup library
+#             check. Added input file existence check.
+#   v1.2.0 — Video ID is now PRIMARY KEY for filenames. Files are saved as
+#             <VideoID>.mp4 instead of title-based names. Guarantees uniqueness
+#             even when multiple videos share the same title.
 # =============================================================================
 #
 # DESCRIPTION:
@@ -12,419 +21,576 @@
 #   and download URLs, then downloads each file to a specified output directory
 #   (local drive or external hard drive).
 #
+# FILE NAMING:
+#   Each video is saved using its Video ID as the filename (primary key).
+#   Example: Video ID 1156438752 → saved as 1156438752.mp4
+#   This guarantees unique filenames even if multiple videos share the same title.
+#
 # FEATURES:
 #   - Reads input from .xlsx or .csv files
-#   - Downloads direct file URLs using the requests library
+#   - Uses Video ID as primary key for all filenames (guaranteed unique)
 #   - Downloads Vimeo / YouTube watch-page URLs using yt-dlp
-#   - Skips already-downloaded files (safe to re-run overnight)
-#   - Retries failed downloads up to 3 times
-#   - Logs all activity to terminal and download_log.txt
-#   - Displays live progress bar per file
-#   - Prints a summary report at the end
+#   - Downloads direct file URLs using the requests library
+#   - Skips already-downloaded files — safe to re-run overnight
+#   - Retries failed downloads up to 3 times with 5-second delay
+#   - Logs all activity to terminal AND download_log.txt simultaneously
+#   - Displays live per-file progress bar in terminal
+#   - Startup check verifies all libraries are installed
+#   - Prints full summary report on completion
 #
 # USAGE:
-#   python download_videos.py --input videos.xlsx --output "E:\Vimeo_Archive"
+#   python download_videos.py
+#   python download_videos.py --input list.csv --output "E:\Vimeo_Archive"
 #
 # REQUIREMENTS:
 #   pip install requests openpyxl yt-dlp tqdm
+#
+# INPUT FILE COLUMNS REQUIRED:
+#   - Video ID       : Unique identifier (used as filename / primary key)
+#   - Video Title    : Used for logging only
+#   - Download URL   : Direct .mp4 URL or Vimeo/YouTube watch-page URL
 # =============================================================================
 
 
 # --- Standard Library Imports ------------------------------------------------
 
-import argparse       # Parses command-line arguments (--input, --output)
-import logging        # Handles writing log messages to file and terminal
-import os             # Provides OS-level file and directory utilities
-import re             # Regular expressions — used for filename sanitization
-import sys            # System utilities — used to exit script on critical errors
-import time           # Used to add delay between retry attempts
-from pathlib import Path  # Object-oriented file path handling (cross-platform)
+import argparse       # Parses command-line arguments like --input and --output
+import csv            # Reads CSV input files row by row
+import logging        # Writes log messages to terminal and log file
+import os             # OS-level utilities (not directly used but good practice)
+import re             # Regular expressions for cleaning illegal filename characters
+import sys            # System utilities — used to exit on critical errors
+import time           # Adds delay between retry attempts on failed downloads
+from pathlib import Path  # Cross-platform file and folder path handling
+
 
 # --- Third-Party Library Imports ---------------------------------------------
 
-import openpyxl           # Reads Microsoft Excel (.xlsx) files
-import requests           # Makes HTTP requests to download files from URLs
-from tqdm import tqdm     # Displays a live progress bar in the terminal
+import openpyxl           # Reads Microsoft Excel .xlsx files
+import requests           # Makes HTTP requests for direct file downloads
+from tqdm import tqdm     # Shows a live progress bar in the terminal
 
 
 # =============================================================================
 # SECTION 1: GLOBAL CONFIGURATION
-# These constants control the behaviour of the script.
-# Change these values here to adjust retry count, chunk size, etc.
+# All tunable constants are defined here at the top for easy access.
+# Change these values to adjust script behaviour without editing logic below.
 # =============================================================================
 
-DEFAULT_INPUT_FILE = "videos.xlsx"          # Default input file if --input not provided
-DEFAULT_OUTPUT_DIR = "./downloaded_videos"  # Default output folder if --output not provided
-MAX_RETRIES        = 3                      # Number of times to retry a failed download
-RETRY_DELAY        = 5                      # Seconds to wait between retry attempts
-CHUNK_SIZE         = 1024 * 1024            # Download chunk size: 1 MB per chunk
-REQUEST_TIMEOUT    = 60                     # Seconds before an HTTP request times out
+DEFAULT_INPUT_FILE = "list.csv"             # Default CSV/XLSX input file name
+DEFAULT_OUTPUT_DIR = "./downloaded_videos"  # Default output folder for downloaded videos
+MAX_RETRIES        = 3                      # How many times to retry a failed download
+RETRY_DELAY        = 5                      # Seconds to wait between each retry attempt
+CHUNK_SIZE         = 1024 * 1024            # File download chunk size: 1 MB per chunk
+REQUEST_TIMEOUT    = 60                     # Seconds before cancelling an unresponsive request
 
 
 # =============================================================================
 # SECTION 2: LOGGING CONFIGURATION
-# Sets up dual logging: messages go to both the terminal and a log file.
+# Configures dual logging — every message goes to both terminal and log file.
+# Format: timestamp  LEVEL     message
 # =============================================================================
 
-LOG_FILE = "download_log.txt"              # Name of the log file to be created on disk
+LOG_FILE = "download_log.txt"              # Log file created in the same folder as the script
 
-logging.basicConfig(                       # Configure the root logger with global settings
-    level=logging.INFO,                    # Minimum level: INFO and above (DEBUG is ignored)
-    format="%(asctime)s  %(levelname)-8s  %(message)s",  # Log line: timestamp + level + message
-    handlers=[                             # List of destinations where logs are sent
-        logging.FileHandler(               # Handler 1: writes log messages to a file
-            LOG_FILE,                      # The file to write logs into
-            encoding="utf-8"              # UTF-8 encoding supports special characters in titles
+logging.basicConfig(                       # Set up the global logging configuration
+    level=logging.INFO,                    # Log INFO, WARNING, ERROR, CRITICAL (skip DEBUG)
+    format="%(asctime)s  %(levelname)-8s  %(message)s",  # Timestamp + padded level + message
+    handlers=[                             # Send log output to two destinations simultaneously
+        logging.FileHandler(               # Handler 1: write all logs to a text file on disk
+            LOG_FILE,                      # Path to the log file
+            encoding="utf-8",             # UTF-8 handles special characters in video titles
         ),
-        logging.StreamHandler(             # Handler 2: writes log messages to the terminal
-            sys.stdout                     # sys.stdout = standard output (Command Prompt / terminal)
+        logging.StreamHandler(             # Handler 2: print all logs to the terminal window
+            sys.stdout,                    # sys.stdout = Command Prompt / PowerShell output
         ),
     ],
 )
 
-log = logging.getLogger(__name__)          # Create a logger instance for use throughout this script
+log = logging.getLogger(__name__)          # Create named logger used throughout this script
 
 
 # =============================================================================
 # SECTION 3: HELPER FUNCTION — sanitize_filename()
-# Cleans a video title so it can be safely used as a filename on any OS.
+# Removes characters that are illegal in Windows/macOS/Linux filenames.
+# Used to clean both Video IDs and titles before using them as file names.
 # =============================================================================
 
 def sanitize_filename(name: str) -> str:
     """
-    Remove or replace characters that are illegal in filenames.
-    Works safely on Windows, macOS, and Linux.
+    Strip or replace characters that are illegal in filenames on any OS.
+
+    Illegal characters on Windows: \\ / * ? : \" < > |
+    Also removes leading/trailing spaces and dots.
 
     Args:
-        name (str): Raw video title from the input file.
+        name (str): Raw string (Video ID or title) to be sanitized.
 
     Returns:
-        str: A cleaned string safe to use as a filename.
+        str: Cleaned string safe to use as a filename. Falls back to
+             'untitled' if the result is empty after cleaning.
     """
-    name = re.sub(r'[\\/*?:"<>|]', "_", name)  # Replace illegal filename characters with underscore
-    name = name.strip()                          # Remove leading and trailing whitespace
-    name = name.strip(".")                       # Remove leading/trailing dots (illegal on Windows)
-    return name or "untitled"                    # If name is empty after cleaning, fall back to 'untitled'
+    name = re.sub(r'[\\/*?:"<>|]', "_", name)  # Replace each illegal character with underscore
+    name = name.strip()                          # Strip leading and trailing whitespace
+    name = name.strip(".")                       # Strip leading/trailing dots (invalid on Windows)
+    return name or "untitled"                    # Return 'untitled' if name is empty after cleaning
 
 
 # =============================================================================
 # SECTION 4: CORE FUNCTION — read_input_file()
-# Reads the Excel or CSV input file and returns a list of video records.
+# Opens the input file (.xlsx or .csv), reads all non-empty rows, and returns
+# a list of dicts — one per video — with keys: video_id, title, download_link.
 # =============================================================================
 
 def read_input_file(path: str) -> list[dict]:
     """
-    Read the input file (.xlsx or .csv) and return a list of video records.
-    Each record is a dict with keys: video_id, title, download_link.
+    Read the input file and return a list of video record dicts.
+
+    Supports both .xlsx (Excel) and .csv formats.
+    Column headers are matched case-insensitively.
+    Empty rows are automatically skipped.
 
     Args:
-        path (str): File path to the input Excel or CSV file.
+        path (str): Path to the input .xlsx or .csv file.
 
     Returns:
-        list[dict]: List of video records extracted from the file.
+        list[dict]: List of dicts with keys: video_id, title, download_link.
     """
-    path = Path(path)    # Convert the string path to a Path object for easier manipulation
-    rows = []            # Initialize an empty list to collect all video records
+    path = Path(path)   # Convert string path to Path object for easy manipulation
+    rows = []           # Empty list to collect all valid video records
 
-    if path.suffix.lower() in (".xlsx", ".xls"):     # Check if the input file is an Excel file
-        wb = openpyxl.load_workbook(path)             # Open and load the Excel workbook from disk
-        ws = wb.active                                # Select the active (first) worksheet
+    # -------------------------------------------------------------------------
+    # BRANCH A: Excel file (.xlsx or .xls)
+    # -------------------------------------------------------------------------
+    if path.suffix.lower() in (".xlsx", ".xls"):        # Detect Excel file by extension
+        wb = openpyxl.load_workbook(path)               # Load the entire Excel workbook into memory
+        ws = wb.active                                  # Select the first (active) worksheet
 
-        # Read the first row as column headers, normalize to lowercase with no extra spaces
-        headers = [
-            str(cell.value).strip().lower()           # Convert each header cell to lowercase string
-            if cell.value else ""                     # Use empty string if the cell is blank
-            for cell in ws[1]                         # Iterate over every cell in the first row
+        headers = [                                     # Build list of normalized header names
+            str(cell.value).strip().lower()             # Lowercase and strip each header cell value
+            if cell.value else ""                       # Use empty string for blank header cells
+            for cell in ws[1]                           # Iterate over every cell in row 1 (header row)
         ]
 
-        for row in ws.iter_rows(min_row=2, values_only=True):    # Loop through all rows (skip header row 1)
-            row_dict = dict(zip(headers, row))                   # Map each header to its cell value
-            if not any(row_dict.values()):                       # Skip the row if all cells are empty
+        for row in ws.iter_rows(min_row=2, values_only=True):  # Loop all data rows, skip header row 1
+            row_dict = dict(zip(headers, row))                 # Pair each header with its cell value
+            if not any(row_dict.values()):                     # Skip row if every cell is empty
                 continue
-            rows.append({                                         # Add a cleaned record dict to the list
-                "video_id":      row_dict.get("video id", ""),        # Extract the Video ID column
-                "title":         row_dict.get("video title", ""),     # Extract the Video Title column
-                "download_link": row_dict.get("download link", ""),   # Extract the Download Link column
+            rows.append({                                       # Append cleaned record to list
+                "video_id":      row_dict.get("video id", ""),       # Map 'Video ID' column
+                "title":         row_dict.get("video title", ""),    # Map 'Video Title' column
+                "download_link": row_dict.get("download url", ""),   # Map 'Download URL' column
             })
 
-    elif path.suffix.lower() == ".csv":               # Check if the input file is a CSV file
-        import csv                                    # Import csv module (only needed for CSV path)
-        with open(path, newline="", encoding="utf-8-sig") as f:   # Open CSV; utf-8-sig handles Excel BOM
-            reader = csv.DictReader(f)                # Read CSV as dictionary using first row as headers
-            for row in reader:                        # Loop through each data row in the CSV
-                norm = {                              # Normalize all header keys to lowercase
-                    k.strip().lower(): v              # Strip spaces and lowercase each key
-                    for k, v in row.items()           # Iterate over all key-value pairs in the row
+    # -------------------------------------------------------------------------
+    # BRANCH B: CSV file (.csv)
+    # -------------------------------------------------------------------------
+    elif path.suffix.lower() == ".csv":                 # Detect CSV file by extension
+        with open(path, newline="", encoding="utf-8-sig") as f:  # Open with utf-8-sig to strip Excel BOM
+            reader = csv.DictReader(f)                  # Read CSV using first row as column headers
+            for row in reader:                          # Loop through each data row
+                norm = {                                # Normalize all keys: lowercase + strip spaces
+                    k.strip().lower(): v
+                    for k, v in row.items()
                 }
-                if not any(norm.values()):            # Skip the row if all values are empty
+                if not any(norm.values()):              # Skip entirely empty rows
                     continue
-                rows.append({                         # Add a cleaned record dict to the list
-                    "video_id":      norm.get("video id", ""),        # Extract the Video ID column
-                    "title":         norm.get("video title", ""),     # Extract the Video Title column
-                    "download_link": norm.get("download link", ""),   # Extract the Download Link column
+                rows.append({                           # Append cleaned record to list
+                    "video_id":      norm.get("video id", ""),       # Map 'Video ID' column
+                    "title":         norm.get("video title", ""),    # Map 'Video Title' column
+                    "download_link": norm.get("download url", ""),   # Map 'Download URL' column
                 })
 
-    else:                                             # File format is not supported
-        log.error("Unsupported file format: %s", path.suffix)   # Log an error with the bad extension
-        sys.exit(1)                                   # Exit the script immediately with error code 1
+    # -------------------------------------------------------------------------
+    # BRANCH C: Unsupported file format
+    # -------------------------------------------------------------------------
+    else:
+        log.error("Unsupported file format '%s'. Use .xlsx or .csv.", path.suffix)  # Log the bad extension
+        sys.exit(1)                                     # Exit immediately — cannot proceed without data
 
-    return rows                                       # Return the full list of video records
+    return rows                                         # Return the complete list of video records
 
 
 # =============================================================================
 # SECTION 5: HELPER FUNCTION — is_youtube_or_vimeo()
-# Detects if a URL is a watch-page link (needs yt-dlp) vs a direct file URL.
+# Returns True if the URL is a Vimeo or YouTube watch-page link.
+# These URLs cannot be downloaded directly — they require yt-dlp.
+# Direct .mp4 URLs return False and are handled by download_direct().
 # =============================================================================
 
 def is_youtube_or_vimeo(url: str) -> bool:
     """
-    Check if a URL is a Vimeo or YouTube watch-page link.
-    These cannot be downloaded directly and require yt-dlp.
+    Detect if a URL is a Vimeo or YouTube watch-page link.
+
+    Watch-page URLs (e.g. vimeo.com/123456 or youtu.be/abc) cannot be
+    downloaded directly using requests. They require yt-dlp to extract
+    the real media stream URL first.
 
     Args:
-        url (str): The download URL from the input file.
+        url (str): The download URL string from the input file.
 
     Returns:
-        bool: True if yt-dlp is needed, False if direct download is possible.
+        bool: True if yt-dlp is needed, False for direct download URLs.
     """
-    return any(                                        # Return True if any domain string is found in the URL
-        d in url                                       # Check if domain string d exists within the URL
-        for d in ("youtu.be", "youtube.com", "vimeo.com/")  # Domains that require yt-dlp
+    return any(                                         # Return True if any known domain is in the URL
+        domain in url                                   # Check if this domain substring exists in the URL
+        for domain in ("youtu.be", "youtube.com", "vimeo.com/")  # Known watch-page domains
     )
 
 
 # =============================================================================
 # SECTION 6: DOWNLOAD FUNCTION — download_with_ytdlp()
-# Downloads a Vimeo or YouTube watch-page URL using the yt-dlp library.
+# Uses yt-dlp to download a Vimeo or YouTube watch-page URL.
+# The Video ID is used as the output filename (primary key).
+# All errors are logged verbosely — nothing is suppressed.
 # =============================================================================
 
 def download_with_ytdlp(url: str, output_path: Path) -> bool:
     """
-    Download a video from a Vimeo or YouTube watch-page URL using yt-dlp.
+    Download a Vimeo or YouTube video using yt-dlp.
+
+    The output filename is derived from the Video ID (primary key).
+    yt-dlp will automatically append the correct file extension (.mp4, .webm, etc).
 
     Args:
-        url (str): The Vimeo or YouTube watch-page URL.
-        output_path (Path): The desired output file path (without extension).
+        url (str): Vimeo or YouTube watch-page URL.
+        output_path (Path): Desired output path without extension.
+                            yt-dlp appends the real extension automatically.
 
     Returns:
         bool: True if download succeeded, False if it failed.
     """
     try:
-        import yt_dlp                                  # Import yt-dlp (lazy import — only loaded when needed)
-    except ImportError:                                # Handle case where yt-dlp is not installed
-        log.error("yt-dlp is not installed. Run: pip install yt-dlp")  # Log a helpful error message
-        return False                                   # Return False to signal download failure
+        import yt_dlp                                   # Lazy import — only load yt-dlp when needed
+    except ImportError:
+        log.error("yt-dlp is NOT installed.")           # Log clear error if library missing
+        log.error("Fix: run  pip install yt-dlp")       # Log the install command to fix it
+        return False                                    # Cannot download without yt-dlp
 
-    ydl_opts = {                                       # Dictionary of options passed to yt-dlp
-        "outtmpl": str(output_path.with_suffix("")) + ".%(ext)s",  # Output filename — yt-dlp adds extension
-        "quiet": True,                                 # Suppress yt-dlp's own verbose output
-        "no_warnings": True,                           # Suppress yt-dlp warning messages
-        "retries": MAX_RETRIES,                        # Tell yt-dlp to retry failed downloads internally
+    ydl_opts = {                                        # Configuration dictionary for yt-dlp
+        "outtmpl": str(output_path.with_suffix("")) + ".%(ext)s",  # Filename = VideoID + real extension
+        "quiet":        False,                          # Show yt-dlp output — errors visible in terminal
+        "no_warnings":  False,                          # Show all warnings — do not suppress any
+        "ignoreerrors": False,                          # Raise errors instead of silently skipping
+        "retries":      MAX_RETRIES,                    # Number of internal retries yt-dlp will attempt
     }
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:       # Create a YoutubeDL instance with our options
-            ydl.download([url])                        # Start the download — pass URL as a list
-        return True                                    # Return True to signal successful download
+        log.info("yt-dlp starting download: %s", url)              # Log start of yt-dlp download
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:                    # Create yt-dlp downloader instance
+            info = ydl.extract_info(url, download=True)             # Extract metadata and download video
+            if info is None:                                        # No info returned = bad/private URL
+                log.error("yt-dlp got no video info — URL may be private, deleted, or invalid.")
+                log.error("  URL: %s", url)                         # Log the problematic URL
+                return False                                        # Signal failure
 
-    except Exception as exc:                           # Catch any exception that yt-dlp raises
-        log.error("yt-dlp failed for %s: %s", url, exc)   # Log the URL and the error message
-        return False                                   # Return False to signal download failure
+        log.info("yt-dlp completed OK: %s", url)                   # Log successful download completion
+        return True                                                 # Signal success
+
+    except yt_dlp.utils.DownloadError as exc:                      # yt-dlp raised a download error
+        log.error("yt-dlp DownloadError:")                         # Log error category
+        log.error("  URL   : %s", url)                             # Log the URL that failed
+        log.error("  Reason: %s", exc)                             # Log the exact error message
+        return False                                               # Signal failure
+
+    except Exception as exc:                                       # Any other unexpected error
+        log.error("yt-dlp unexpected error:")                      # Log error category
+        log.error("  URL   : %s", url)                             # Log the URL that failed
+        log.error("  Reason: %s", exc)                             # Log the error message
+        log.exception("  Full traceback:")                         # Log full Python traceback
+        return False                                               # Signal failure
 
 
 # =============================================================================
 # SECTION 7: DOWNLOAD FUNCTION — download_direct()
-# Downloads a direct file URL using the requests library with retry logic.
+# Downloads a direct file URL (e.g. ending in .mp4) using HTTP streaming.
+# Downloads in 1 MB chunks with a live progress bar.
+# Retries up to MAX_RETRIES times on any network error.
 # =============================================================================
 
 def download_direct(url: str, output_path: Path) -> bool:
     """
-    Download a direct file URL using HTTP streaming with a progress bar.
-    Retries up to MAX_RETRIES times on failure.
+    Download a direct file URL using chunked HTTP streaming.
+
+    Streams the file in CHUNK_SIZE pieces to avoid loading the entire
+    file into memory. Displays a tqdm progress bar showing download speed
+    and percentage. Retries up to MAX_RETRIES times on failure.
 
     Args:
-        url (str): Direct file download URL (e.g. ending in .mp4).
-        output_path (Path): Full path where the file will be saved.
+        url (str): Direct file download URL (usually ending in .mp4).
+        output_path (Path): Full local path where the file will be saved.
 
     Returns:
         bool: True if download succeeded, False if all retries failed.
     """
-    for attempt in range(1, MAX_RETRIES + 1):          # Loop from attempt 1 to MAX_RETRIES (inclusive)
+    for attempt in range(1, MAX_RETRIES + 1):           # Try downloading up to MAX_RETRIES times
         try:
-            with requests.get(                         # Open an HTTP GET request to the URL
-                url,                                   # The direct download URL
-                stream=True,                           # Stream response — don't load entire file into memory
-                timeout=REQUEST_TIMEOUT                # Cancel if server doesn't respond in time
+            with requests.get(                          # Open a streaming HTTP GET request
+                url,                                    # The direct download URL
+                stream=True,                            # Stream in chunks — don't buffer entire file
+                timeout=REQUEST_TIMEOUT,                # Abort if no response within timeout seconds
             ) as r:
-                r.raise_for_status()                   # Raise exception if HTTP status is 4xx or 5xx
+                r.raise_for_status()                    # Raise HTTPError for 4xx / 5xx status codes
 
-                total = int(                           # Get the total file size in bytes for progress bar
-                    r.headers.get("Content-Length", 0) # Read Content-Length header; default 0 if missing
-                )
+                total = int(r.headers.get("Content-Length", 0))  # Get total file size from headers
 
-                with open(output_path, "wb") as f, tqdm(    # Open output file AND show progress bar together
-                    total=total,                             # Total file size for progress calculation
-                    unit="B",                                # Unit label shown in progress bar
-                    unit_scale=True,                         # Auto-scale units (B → KB → MB)
-                    unit_divisor=1024,                       # Use 1024 for binary file size scaling
-                    desc=output_path.name[:40],              # Show first 40 chars of filename as bar label
-                    leave=False,                             # Remove progress bar after completion
-                ) as bar:
-                    for chunk in r.iter_content(chunk_size=CHUNK_SIZE):  # Read file in CHUNK_SIZE byte pieces
-                        if chunk:                            # Only process non-empty chunks
-                            f.write(chunk)                   # Write the chunk to the output file on disk
-                            bar.update(len(chunk))           # Advance progress bar by size of this chunk
+                with (                                  # Open file for writing AND show progress bar
+                    open(output_path, "wb") as f,       # Open output file in binary write mode
+                    tqdm(                               # Create progress bar for this download
+                        total=total,                    # Total bytes for percentage calculation
+                        unit="B",                       # Display unit: Bytes
+                        unit_scale=True,                # Auto-scale: B → KB → MB → GB
+                        unit_divisor=1024,              # Use 1024 for binary scaling (KiB, MiB)
+                        desc=output_path.name[:40],     # Show first 40 chars of filename as label
+                        leave=False,                    # Clear bar from terminal after completion
+                    ) as bar
+                ):
+                    for chunk in r.iter_content(chunk_size=CHUNK_SIZE):  # Read file in 1 MB pieces
+                        if chunk:                       # Skip empty keep-alive chunks
+                            f.write(chunk)              # Write chunk to output file on disk
+                            bar.update(len(chunk))      # Advance progress bar by chunk size
 
-            return True                                # All chunks written successfully — return True
+            return True                                 # File fully written — return success
 
-        except requests.RequestException as exc:       # Catch any network or HTTP error
-            log.warning(                               # Log a warning (not error — we will retry)
-                "Attempt %d/%d failed for %s: %s",    # Message template with placeholders
-                attempt, MAX_RETRIES, url, exc         # Values for each placeholder
+        except requests.RequestException as exc:        # Catch all requests/network errors
+            log.warning(                                # Log as warning (not error — retrying)
+                "Attempt %d/%d failed — %s",
+                attempt, MAX_RETRIES, exc,
             )
-            if attempt < MAX_RETRIES:                  # If we still have retries remaining
-                time.sleep(RETRY_DELAY)                # Wait RETRY_DELAY seconds before next attempt
+            if attempt < MAX_RETRIES:                   # If retries remain
+                log.warning("Retrying in %d seconds...", RETRY_DELAY)  # Warn about retry delay
+                time.sleep(RETRY_DELAY)                 # Wait before next attempt
 
-    return False                                       # All retry attempts exhausted — return False
+    log.error("All %d attempts failed for: %s", MAX_RETRIES, url)  # Log total failure after all retries
+    return False                                        # All retries exhausted — return failure
 
 
 # =============================================================================
 # SECTION 8: ORCHESTRATOR FUNCTION — download_video()
-# Controls the full download flow for a single video row.
+# Handles the complete download flow for a single video record.
+#
+# KEY BEHAVIOUR — Video ID as Primary Key:
+#   The filename is based ONLY on the Video ID.
+#   Example: Video ID 1156438752 → saved as 1156438752.mp4
+#   This means:
+#     - Duplicate titles never cause skipping
+#     - Re-running the script safely skips already-downloaded Video IDs
+#     - Every file on disk is uniquely identified by its Video ID
 # =============================================================================
 
 def download_video(row: dict, output_dir: Path) -> str:
     """
-    Handle the complete download process for one video record.
-    Determines URL type, checks for existing files, and routes
-    to the correct download function.
+    Orchestrate the full download process for one video record.
+
+    Steps:
+      1. Extract and validate url, title, video_id from the row
+      2. Use Video ID as the output filename (primary key)
+      3. Skip if a file with this Video ID already exists on disk
+      4. Route to yt-dlp (watch-page URLs) or requests (direct URLs)
+      5. Return result status string
 
     Args:
-        row (dict): A single video record with keys: video_id, title, download_link.
-        output_dir (Path): The directory where the video file will be saved.
+        row (dict): Single video record with keys: video_id, title, download_link.
+        output_dir (Path): Folder where the downloaded file will be saved.
 
     Returns:
-        str: Result status — one of 'ok', 'skipped', 'failed', or 'no_url'.
+        str: One of 'ok', 'skipped', 'failed', or 'no_url'.
     """
-    url    = str(row.get("download_link") or "").strip()    # Extract and clean the download URL
-    title  = str(row.get("title") or "untitled").strip()    # Extract and clean the video title
-    vid_id = str(row.get("video_id") or "").strip()         # Extract and clean the video ID
+    # --- Extract fields from the row -----------------------------------------
 
-    if not url:                                              # Check if the URL is empty or missing
-        log.warning(                                         # Log a warning for this row
-            "No URL for video_id=%s title=%s — skipping",   # Warning message template
-            vid_id, title                                    # Values for the placeholders
-        )
-        return "no_url"                                      # Return 'no_url' status and skip this video
+    url    = str(row.get("download_link") or "").strip()   # Get and clean the download URL
+    title  = str(row.get("title")         or "").strip()   # Get and clean the video title (for logging)
+    vid_id = str(row.get("video_id")      or "").strip()   # Get and clean the Video ID (primary key)
 
-    safe_title = sanitize_filename(title)                    # Clean the title to make it a valid filename
+    # --- Validate URL --------------------------------------------------------
 
-    if is_youtube_or_vimeo(url):                             # Check if this is a watch-page URL
-        output_path = output_dir / f"{safe_title}"           # yt-dlp will auto-add the correct extension
+    if not url:                                             # If URL is empty or missing
+        log.warning("NO URL — video_id='%s' title='%s' — skipping", vid_id, title)  # Log skip reason
+        return "no_url"                                     # Return no_url status
+
+    # --- Validate Video ID ---------------------------------------------------
+
+    if not vid_id:                                          # If Video ID is missing
+        log.warning("NO VIDEO ID — title='%s' url='%s' — using 'no_id'", title, url)  # Warn about missing ID
+        vid_id = "no_id"                                    # Fall back to placeholder ID
+
+    # --- Build Output Filename using Video ID as Primary Key -----------------
+
+    safe_id = sanitize_filename(vid_id)                     # Clean Video ID for safe use as filename
+
+    if is_youtube_or_vimeo(url):                            # Watch-page URL — yt-dlp adds extension
+        output_path = output_dir / safe_id                  # e.g. downloaded_videos/1156438752
+    else:                                                   # Direct file URL — extract extension
+        ext = Path(url.split("?")[0]).suffix or ".mp4"      # Get extension from URL or default to .mp4
+        output_path = output_dir / f"{safe_id}{ext}"        # e.g. downloaded_videos/1156438752.mp4
+
+    # --- Skip Check using Video ID as Primary Key ----------------------------
+
+    existing = list(output_dir.glob(f"{safe_id}.*"))        # Look for any file named <VideoID>.*
+    if existing:                                            # File with this Video ID already exists
+        log.info("SKIP  [ID=%s] already on disk: %s", vid_id, existing[0].name)  # Log skip
+        return "skipped"                                    # Return skipped status
+
+    # --- Start Download ------------------------------------------------------
+
+    log.info("START [ID=%s] %s", vid_id, title)             # Log start with Video ID and title
+    log.info("  URL      : %s", url)                        # Log the download URL
+    log.info("  Saving as: %s", output_path.name)           # Log the exact filename being used
+
+    if is_youtube_or_vimeo(url):                            # Route watch-page URLs to yt-dlp
+        success = download_with_ytdlp(url, output_path)     # Download via yt-dlp
+    else:                                                   # Route direct URLs to requests
+        success = download_direct(url, output_path)         # Download via chunked HTTP
+
+    # --- Log Result ----------------------------------------------------------
+
+    if success:
+        log.info("OK    [ID=%s] %s", vid_id, title)         # Log successful download
+        return "ok"                                         # Return ok status
     else:
-        ext = Path(url.split("?")[0]).suffix or ".mp4"       # Extract extension from URL; default to .mp4
-        output_path = output_dir / f"{safe_title}{ext}"      # Build full output path with extension
-
-    existing = list(output_dir.glob(f"{safe_title}.*"))      # Search for any existing file with this title
-    if existing:                                             # If a matching file already exists on disk
-        log.info("SKIP  already exists: %s", existing[0].name)  # Log that we are skipping this file
-        return "skipped"                                     # Return 'skipped' status
-
-    log.info("START [%s] %s", vid_id, title)                 # Log that we are starting this download
-
-    if is_youtube_or_vimeo(url):                             # Route to yt-dlp for watch-page URLs
-        success = download_with_ytdlp(url, output_path)      # Attempt download via yt-dlp
-    else:                                                    # Route to requests for direct file URLs
-        success = download_direct(url, output_path)          # Attempt direct chunked download
-
-    if success:                                              # Check if the download completed successfully
-        log.info("OK    [%s] %s", vid_id, title)             # Log success
-        return "ok"                                          # Return 'ok' status
-    else:
-        log.error("FAIL  [%s] %s  url=%s", vid_id, title, url)  # Log failure with URL for debugging
-        return "failed"                                      # Return 'failed' status
+        log.error("FAIL  [ID=%s] %s", vid_id, title)        # Log failed download
+        log.error("  URL: %s", url)                         # Log the failed URL for investigation
+        return "failed"                                     # Return failed status
 
 
 # =============================================================================
 # SECTION 9: ENTRY POINT — main()
-# Parses arguments, reads the input file, runs all downloads, prints summary.
+# Parses CLI arguments, runs startup checks, reads the input file,
+# loops through all videos, and prints a final summary report.
 # =============================================================================
 
 def main():
     """
-    Main entry point for the script.
-    Parses CLI arguments, reads the input file, downloads all videos,
-    and prints a final summary report.
+    Main entry point of the script.
+
+    Workflow:
+      1. Parse --input and --output arguments
+      2. Create output directory if it doesn't exist
+      3. Log startup info and check all libraries are installed
+      4. Verify input file exists
+      5. Read all video records from input file
+      6. Download each video using Video ID as primary key filename
+      7. Print and log a full summary report
     """
 
-    # --- Argument Parser Setup -----------------------------------------------
+    # --- Step 1: Argument Parsing --------------------------------------------
 
-    parser = argparse.ArgumentParser(                         # Create a command-line argument parser
-        description="Download Vimeo videos listed in an XLSX or CSV file."  # Shown in --help output
+    parser = argparse.ArgumentParser(                          # Create CLI argument parser
+        description="Econ Engineering — Vimeo Video Bulk Downloader v1.2.0",
     )
-    parser.add_argument(                                      # Define the --input argument
-        "--input", "-i",                                      # Long and short flag names
-        default=DEFAULT_INPUT_FILE,                           # Use default if not provided by user
-        help=f"Path to input XLSX or CSV file (default: {DEFAULT_INPUT_FILE})",  # Help text
+    parser.add_argument(                                       # --input argument
+        "--input", "-i",
+        default=DEFAULT_INPUT_FILE,                            # Default: list.csv
+        help=f"Path to input .xlsx or .csv file (default: {DEFAULT_INPUT_FILE})",
     )
-    parser.add_argument(                                      # Define the --output argument
-        "--output", "-o",                                     # Long and short flag names
-        default=DEFAULT_OUTPUT_DIR,                           # Use default if not provided by user
-        help=f"Destination folder for downloaded videos (default: {DEFAULT_OUTPUT_DIR})",  # Help text
+    parser.add_argument(                                       # --output argument
+        "--output", "-o",
+        default=DEFAULT_OUTPUT_DIR,                            # Default: ./downloaded_videos
+        help=f"Folder to save downloaded videos (default: {DEFAULT_OUTPUT_DIR})",
     )
-    args = parser.parse_args()                                # Parse the actual arguments from command line
+    args = parser.parse_args()                                 # Parse arguments from command line
 
-    # --- Output Directory Setup ----------------------------------------------
+    # --- Step 2: Create Output Directory -------------------------------------
 
-    output_dir = Path(args.output)                            # Convert output path string to a Path object
-    output_dir.mkdir(parents=True, exist_ok=True)             # Create the folder (and parents) if not exists
+    output_dir = Path(args.output)                             # Convert to Path object
+    output_dir.mkdir(parents=True, exist_ok=True)              # Create folder (+ parents) if missing
 
-    # --- Startup Log ---------------------------------------------------------
+    # --- Step 3: Startup Log -------------------------------------------------
 
-    log.info("=" * 60)                                        # Print a separator line to the log
-    log.info("Econ Engineering Video Downloader")             # Log the project name
-    log.info("Input  : %s", args.input)                       # Log the input file path
-    log.info("Output : %s", output_dir.resolve())             # Log the full absolute output path
-    log.info("=" * 60)                                        # Print another separator line
+    log.info("=" * 60)
+    log.info("  Econ Engineering Video Downloader  v1.2.0")
+    log.info("=" * 60)
+    log.info("Input       : %s", args.input)                   # Log input file path
+    log.info("Output      : %s", output_dir.resolve())         # Log full absolute output path
+    log.info("Python      : %s", sys.version)                  # Log Python version
+    log.info("Filename Key: Video ID (primary key)")           # Log filename strategy
+    log.info("-" * 60)
 
-    # --- Read Input File -----------------------------------------------------
+    # --- Step 4: Library Check -----------------------------------------------
+    # Verify all required third-party libraries are installed before starting
 
-    rows  = read_input_file(args.input)                       # Read all video records from the input file
-    total = len(rows)                                         # Count total number of videos to process
-    log.info("Found %d video(s) in input file.", total)       # Log how many videos were found
+    all_ok = True                                              # Track if all libraries are present
 
-    # --- Download Loop -------------------------------------------------------
+    try:
+        import requests as _r                                  # Check requests
+        log.info("requests : OK  (v%s)", _r.__version__)
+    except ImportError:
+        log.error("requests : MISSING — run: pip install requests")
+        all_ok = False                                         # Mark as not OK
 
-    counts = {                                                # Dictionary to track result counts
-        "ok":      0,                                         # Counter for successful downloads
-        "skipped": 0,                                         # Counter for skipped (already exists) files
-        "failed":  0,                                         # Counter for failed downloads
-        "no_url":  0,                                         # Counter for rows with no URL
-    }
+    try:
+        import openpyxl as _o                                  # Check openpyxl
+        log.info("openpyxl : OK  (v%s)", _o.__version__)
+    except ImportError:
+        log.error("openpyxl : MISSING — run: pip install openpyxl")
+        all_ok = False
 
-    for i, row in enumerate(rows, start=1):                   # Loop through each video record (1-indexed)
-        log.info("--- (%d/%d) ---", i, total)                 # Log current progress (e.g. 42/5000)
-        result = download_video(row, output_dir)              # Download this video and get result status
-        counts[result] += 1                                   # Increment the appropriate result counter
+    try:
+        import tqdm as _t                                      # Check tqdm
+        log.info("tqdm     : OK  (v%s)", _t.__version__)
+    except ImportError:
+        log.error("tqdm     : MISSING — run: pip install tqdm")
+        all_ok = False
 
-    # --- Final Summary -------------------------------------------------------
+    try:
+        import yt_dlp as _y                                    # Check yt-dlp
+        log.info("yt-dlp   : OK  (v%s)", _y.version.__version__)
+    except ImportError:
+        log.error("yt-dlp   : MISSING — run: pip install yt-dlp")
+        all_ok = False
 
-    log.info("=" * 60)                                        # Print a separator line
-    log.info("SUMMARY")                                       # Print the summary header
-    log.info("  Total    : %d", total)                        # Log total number of videos processed
-    log.info("  Success  : %d", counts["ok"])                 # Log number of successfully downloaded files
-    log.info("  Skipped  : %d", counts["skipped"])            # Log number of skipped (existing) files
-    log.info("  Failed   : %d", counts["failed"])             # Log number of failed downloads
-    log.info("  No URL   : %d", counts["no_url"])             # Log number of rows with missing URLs
-    log.info("Log saved to: %s", LOG_FILE)                    # Remind user where the log file is saved
-    log.info("=" * 60)                                        # Print final separator line
+    if not all_ok:                                             # If any library is missing
+        log.error("-" * 60)
+        log.error("One or more libraries are missing.")
+        log.error("Run:  pip install requests openpyxl yt-dlp tqdm")
+        log.error("Then re-run the script.")
+        sys.exit(1)                                            # Exit — cannot run without libraries
+
+    # --- Step 5: Input File Check --------------------------------------------
+
+    log.info("-" * 60)
+    if not Path(args.input).exists():                          # Check input file exists on disk
+        log.error("INPUT FILE NOT FOUND: '%s'", args.input)   # Log clear error
+        log.error("Make sure '%s' is in the same folder as this script.", args.input)
+        sys.exit(1)                                            # Exit — no input file = nothing to do
+
+    # --- Step 6: Read Input File ---------------------------------------------
+
+    rows  = read_input_file(args.input)                        # Parse all video records from file
+    total = len(rows)                                          # Count total videos
+    log.info("Found %d video(s) to process.", total)           # Log total count
+    log.info("=" * 60)
+
+    # --- Step 7: Download Loop -----------------------------------------------
+
+    counts = {"ok": 0, "skipped": 0, "failed": 0, "no_url": 0}  # Result counters
+
+    for i, row in enumerate(rows, start=1):                    # Loop each video (1-indexed)
+        log.info("--- (%d / %d) ---", i, total)                # Log progress counter
+        result = download_video(row, output_dir)               # Run full download flow for this video
+        counts[result] += 1                                    # Increment matching result counter
+
+    # --- Step 8: Final Summary -----------------------------------------------
+
+    log.info("=" * 60)
+    log.info("DOWNLOAD COMPLETE — SUMMARY")
+    log.info("=" * 60)
+    log.info("  Total      : %d", total)                       # All videos in input file
+    log.info("  Downloaded : %d", counts["ok"])                # Successfully downloaded
+    log.info("  Skipped    : %d", counts["skipped"])           # Already existed on disk
+    log.info("  Failed     : %d", counts["failed"])            # Download failed after retries
+    log.info("  No URL     : %d", counts["no_url"])            # Rows with no download URL
+    log.info("-" * 60)
+    log.info("  Output folder : %s", output_dir.resolve())     # Where videos were saved
+    log.info("  Log file      : %s", Path(LOG_FILE).resolve()) # Where log was saved
+    log.info("=" * 60)
 
 
 # =============================================================================
 # SCRIPT ENTRY GUARD
-# Ensures main() only runs when this file is executed directly,
-# not when it is imported as a module by another script.
+# This block ensures main() is only called when the script is run directly
+# (e.g. python download_videos.py) and not when imported as a module.
 # =============================================================================
 
-if __name__ == "__main__":    # Check if this script is being run directly (not imported)
-    main()                    # Call the main function to start the program
+if __name__ == "__main__":   # True only when script is executed directly
+    main()                   # Start the program
