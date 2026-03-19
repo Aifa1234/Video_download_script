@@ -27,7 +27,7 @@ DATE      : March 2026
 
 ## 1. Overview
 
-Bulk downloader for ~5,000 Vimeo videos. Reads a CSV/XLSX input file, downloads each video to a local or external drive, and logs all activity. Designed to run unattended overnight with safe resume on interruption.
+Bulk downloader for ~5,000 Vimeo videos. Reads a CSV/XLSX input file, downloads each video to a local or external drive.
 
 **Key design decision:** Video ID is the primary key — every file is saved as `<VideoID>.mp4`, guaranteeing uniqueness regardless of duplicate titles.
 
