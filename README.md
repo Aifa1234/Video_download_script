@@ -4,7 +4,6 @@
 =============================================================================
 PROJECT   : Vimeo Video Bulk Downloader
 PURPOSE   : Migrate ~5,000 Vimeo video files to local / external storage
-VERSION   : 1.2.0
 DATE      : March 2026
 =============================================================================
 ```
@@ -23,10 +22,6 @@ DATE      : March 2026
 8. [File Naming — Video ID as Primary Key](#9-file-naming--video-id-as-primary-key)
 9. [How It Works](#10-how-it-works)
 10. [Logging & Output](#11-logging--output)
-11. [Error Handling](#12-error-handling)
-12. [Overnight Run](#13-overnight-run)
-13. [Troubleshooting](#14-troubleshooting)
-14. [Timeline](#15-timeline)
 
 ---
 
@@ -208,20 +203,3 @@ DOWNLOAD COMPLETE — SUMMARY
 ============================================================
 ```
 
----
-
-## 11. Error Handling
-
-| Scenario | Behaviour | Log Level |
-|---|---|---|
-| Network timeout | Retry x3 with 5s delay | `WARNING` |
-| All retries exhausted | Mark FAILED, continue | `ERROR` |
-| Video ID already on disk | Skip | `INFO` |
-| Missing URL | Mark NO_URL, continue | `WARNING` |
-| Missing Video ID | Use `no_id`, continue | `WARNING` |
-| HTTP 403/404 | Mark FAILED, log URL | `ERROR` |
-| Private/deleted video | Log yt-dlp reason, continue | `ERROR` |
-| Missing library | Log install command, exit | `ERROR` |
-| Input file not found | Log hint, exit | `ERROR` |
-
----
