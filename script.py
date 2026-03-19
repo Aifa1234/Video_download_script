@@ -59,19 +59,6 @@ log = logging.getLogger(__name__)          # Create named logger used throughout
 # =============================================================================
 
 def sanitize_filename(name: str) -> str:
-    """
-    Strip or replace characters that are illegal in filenames on any OS.
-
-    Illegal characters on Windows: \\ / * ? : \" < > |
-    Also removes leading/trailing spaces and dots.
-
-    Args:
-        name (str): Raw string (Video ID or title) to be sanitized.
-
-    Returns:
-        str: Cleaned string safe to use as a filename. Falls back to
-             'untitled' if the result is empty after cleaning.
-    """
     name = re.sub(r'[\\/*?:"<>|]', "_", name)  # Replace each illegal character with underscore
     name = name.strip()                          # Strip leading and trailing whitespace
     name = name.strip(".")                       # Strip leading/trailing dots (invalid on Windows)
@@ -85,19 +72,6 @@ def sanitize_filename(name: str) -> str:
 # =============================================================================
 
 def read_input_file(path: str) -> list[dict]:
-    """
-    Read the input file and return a list of video record dicts.
-
-    Supports both .xlsx (Excel) and .csv formats.
-    Column headers are matched case-insensitively.
-    Empty rows are automatically skipped.
-
-    Args:
-        path (str): Path to the input .xlsx or .csv file.
-
-    Returns:
-        list[dict]: List of dicts with keys: video_id, title, download_link.
-    """
     path = Path(path)   # Convert string path to Path object for easy manipulation
     rows = []           # Empty list to collect all valid video records
 
@@ -161,19 +135,6 @@ def read_input_file(path: str) -> list[dict]:
 # =============================================================================
 
 def is_youtube_or_vimeo(url: str) -> bool:
-    """
-    Detect if a URL is a Vimeo or YouTube watch-page link.
-
-    Watch-page URLs (e.g. vimeo.com/123456 or youtu.be/abc) cannot be
-    downloaded directly using requests. They require yt-dlp to extract
-    the real media stream URL first.
-
-    Args:
-        url (str): The download URL string from the input file.
-
-    Returns:
-        bool: True if yt-dlp is needed, False for direct download URLs.
-    """
     return any(                                         # Return True if any known domain is in the URL
         domain in url                                   # Check if this domain substring exists in the URL
         for domain in ("youtu.be", "youtube.com", "vimeo.com/")  # Known watch-page domains
@@ -188,20 +149,6 @@ def is_youtube_or_vimeo(url: str) -> bool:
 # =============================================================================
 
 def download_with_ytdlp(url: str, output_path: Path) -> bool:
-    """
-    Download a Vimeo or YouTube video using yt-dlp.
-
-    The output filename is derived from the Video ID (primary key).
-    yt-dlp will automatically append the correct file extension (.mp4, .webm, etc).
-
-    Args:
-        url (str): Vimeo or YouTube watch-page URL.
-        output_path (Path): Desired output path without extension.
-                            yt-dlp appends the real extension automatically.
-
-    Returns:
-        bool: True if download succeeded, False if it failed.
-    """
     try:
         import yt_dlp                                   # Lazy import — only load yt-dlp when needed
     except ImportError:
@@ -251,20 +198,6 @@ def download_with_ytdlp(url: str, output_path: Path) -> bool:
 # =============================================================================
 
 def download_direct(url: str, output_path: Path) -> bool:
-    """
-    Download a direct file URL using chunked HTTP streaming.
-
-    Streams the file in CHUNK_SIZE pieces to avoid loading the entire
-    file into memory. Displays a tqdm progress bar showing download speed
-    and percentage. Retries up to MAX_RETRIES times on failure.
-
-    Args:
-        url (str): Direct file download URL (usually ending in .mp4).
-        output_path (Path): Full local path where the file will be saved.
-
-    Returns:
-        bool: True if download succeeded, False if all retries failed.
-    """
     for attempt in range(1, MAX_RETRIES + 1):           # Try downloading up to MAX_RETRIES times
         try:
             with requests.get(                          # Open a streaming HTTP GET request
@@ -321,23 +254,7 @@ def download_direct(url: str, output_path: Path) -> bool:
 # =============================================================================
 
 def download_video(row: dict, output_dir: Path) -> str:
-    """
-    Orchestrate the full download process for one video record.
-
-    Steps:
-      1. Extract and validate url, title, video_id from the row
-      2. Use Video ID as the output filename (primary key)
-      3. Skip if a file with this Video ID already exists on disk
-      4. Route to yt-dlp (watch-page URLs) or requests (direct URLs)
-      5. Return result status string
-
-    Args:
-        row (dict): Single video record with keys: video_id, title, download_link.
-        output_dir (Path): Folder where the downloaded file will be saved.
-
-    Returns:
-        str: One of 'ok', 'skipped', 'failed', or 'no_url'.
-    """
+   
     # --- Extract fields from the row -----------------------------------------
 
     url    = str(row.get("download_link") or "").strip()   # Get and clean the download URL
@@ -402,19 +319,6 @@ def download_video(row: dict, output_dir: Path) -> str:
 # =============================================================================
 
 def main():
-    """
-    Main entry point of the script.
-
-    Workflow:
-      1. Parse --input and --output arguments
-      2. Create output directory if it doesn't exist
-      3. Log startup info and check all libraries are installed
-      4. Verify input file exists
-      5. Read all video records from input file
-      6. Download each video using Video ID as primary key filename
-      7. Print and log a full summary report
-    """
-
     # --- Step 1: Argument Parsing --------------------------------------------
 
     parser = argparse.ArgumentParser(                          # Create CLI argument parser
@@ -528,11 +432,5 @@ def main():
     log.info("=" * 60)
 
 
-# =============================================================================
-# SCRIPT ENTRY GUARD
-# This block ensures main() is only called when the script is run directly
-# (e.g. python download_videos.py) and not when imported as a module.
-# =============================================================================
-
-if __name__ == "__main__":   # True only when script is executed directly
-    main()                   # Start the program
+if __name__ == "__main__":   
+    main()                  
