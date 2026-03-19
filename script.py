@@ -1,57 +1,3 @@
-# =============================================================================
-# PROJECT   : Vimeo Video Bulk Downloader
-# TEAM      : Econ Engineering Team
-# PURPOSE   : Migrate ~5,000 Vimeo video files to local / external storage
-# VERSION   : 1.2.0
-# DATE      : March 2026
-# =============================================================================
-# CHANGELOG :
-#   v1.0.0 — Initial release
-#   v1.1.0 — Updated column names to match real CSV (Video ID, Video Title,
-#             Download URL). Added verbose error logging. Added startup library
-#             check. Added input file existence check.
-#   v1.2.0 — Video ID is now PRIMARY KEY for filenames. Files are saved as
-#             <VideoID>.mp4 instead of title-based names. Guarantees uniqueness
-#             even when multiple videos share the same title.
-# =============================================================================
-#
-# DESCRIPTION:
-#   This script automates the bulk downloading of video files from Vimeo.
-#   It reads a structured Excel (.xlsx) or CSV file containing video metadata
-#   and download URLs, then downloads each file to a specified output directory
-#   (local drive or external hard drive).
-#
-# FILE NAMING:
-#   Each video is saved using its Video ID as the filename (primary key).
-#   Example: Video ID 1156438752 → saved as 1156438752.mp4
-#   This guarantees unique filenames even if multiple videos share the same title.
-#
-# FEATURES:
-#   - Reads input from .xlsx or .csv files
-#   - Uses Video ID as primary key for all filenames (guaranteed unique)
-#   - Downloads Vimeo / YouTube watch-page URLs using yt-dlp
-#   - Downloads direct file URLs using the requests library
-#   - Skips already-downloaded files — safe to re-run overnight
-#   - Retries failed downloads up to 3 times with 5-second delay
-#   - Logs all activity to terminal AND download_log.txt simultaneously
-#   - Displays live per-file progress bar in terminal
-#   - Startup check verifies all libraries are installed
-#   - Prints full summary report on completion
-#
-# USAGE:
-#   python download_videos.py
-#   python download_videos.py --input list.csv --output "E:\Vimeo_Archive"
-#
-# REQUIREMENTS:
-#   pip install requests openpyxl yt-dlp tqdm
-#
-# INPUT FILE COLUMNS REQUIRED:
-#   - Video ID       : Unique identifier (used as filename / primary key)
-#   - Video Title    : Used for logging only
-#   - Download URL   : Direct .mp4 URL or Vimeo/YouTube watch-page URL
-# =============================================================================
-
-
 # --- Standard Library Imports ------------------------------------------------
 
 import argparse       # Parses command-line arguments like --input and --output
@@ -62,10 +8,6 @@ import re             # Regular expressions for cleaning illegal filename charac
 import sys            # System utilities — used to exit on critical errors
 import time           # Adds delay between retry attempts on failed downloads
 from pathlib import Path  # Cross-platform file and folder path handling
-
-
-# --- Third-Party Library Imports ---------------------------------------------
-
 import openpyxl           # Reads Microsoft Excel .xlsx files
 import requests           # Makes HTTP requests for direct file downloads
 from tqdm import tqdm     # Shows a live progress bar in the terminal
