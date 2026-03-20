@@ -39,13 +39,13 @@ Bulk downloader for ~5,000 Vimeo videos. Reads a CSV/XLSX input file, downloads 
 ```
 VideoDownloader/
 │
-├── download_videos.py       # Main script (v1.2.0)
-├── list.csv                 # Input file — video metadata + download URLs
-├── download_log.txt         # Auto-generated on first run
-├── README.md                # This file
+├── download_videos.py       
+├── list.csv                
+├── download_log.txt       
+├── README.md                
 │
-└── downloaded_videos/       # Output folder (auto-created)
-    ├── 1156438752.mp4       # Named by Video ID
+└── downloaded_videos/      
+    ├── 1156438752.mp4       
     ├── 1156438753.mp4
     └── ...
 ```
