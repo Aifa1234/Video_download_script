@@ -1,5 +1,6 @@
 # --- Standard Library Imports ------------------------------------------------
 
+import argparse
 import csv           
 import logging        
 import os             
@@ -120,7 +121,7 @@ def read_input_file(path: str) -> list[dict]:
 # Direct .mp4 URLs return False and are handled by download_direct().
 # =============================================================================
 
-def is_youtube_or_vimeo(url: str) -> bool:
+def is_vimeo(url: str) -> bool:
     return any(                                      
         domain in url                                  
         for domain in ( "vimeo.com/")  
@@ -255,10 +256,10 @@ def download_video(row: dict, output_dir: Path) -> str:
 
     safe_id = sanitize_filename(vid_id)                     
 
-    if is_youtube_or_vimeo(url):                            
+    if is_vimeo(url):                            
         output_path = output_dir / safe_id                  
     else:                                              
-        ext = Path(url.split("?")[0]).suffix or ".mp
+        ext = Path(url.split("?")[0]).suffix or ".mp"
         output_path = output_dir / f"{safe_id}{ext}"      
 
     # --- Skip Check using Video ID as Primary Key ----------------------------
@@ -274,7 +275,7 @@ def download_video(row: dict, output_dir: Path) -> str:
     log.info("  URL      : %s", url)                        
     log.info("  Saving as: %s", output_path.name)           
 
-    if is_youtube_or_vimeo(url):                         
+    if is_vimeo(url):                         
         success = download_with_ytdlp(url, output_path)  
     else:                                                   
         success = download_direct(url, output_path)         

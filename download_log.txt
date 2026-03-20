@@ -1,180 +1,201 @@
-2026-03-20 01:46:37,062  INFO      ============================================================
-2026-03-20 01:46:37,062  INFO        Econ Engineering Video Downloader  v1.2.0
-2026-03-20 01:46:37,063  INFO      ============================================================
-2026-03-20 01:46:37,063  INFO      Input       : list.csv
-2026-03-20 01:46:37,064  INFO      Output      : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
-2026-03-20 01:46:37,064  INFO      Python      : 3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]
-2026-03-20 01:46:37,065  INFO      Filename Key: Video ID (primary key)
-2026-03-20 01:46:37,065  INFO      ------------------------------------------------------------
-2026-03-20 01:46:37,066  INFO      requests : OK  (v2.32.3)
-2026-03-20 01:46:37,066  INFO      openpyxl : OK  (v3.1.5)
-2026-03-20 01:46:37,066  INFO      tqdm     : OK  (v4.67.1)
-2026-03-20 01:46:37,220  INFO      yt-dlp   : OK  (v2026.03.17)
-2026-03-20 01:46:37,220  INFO      ------------------------------------------------------------
-2026-03-20 01:46:37,223  INFO      Found 5 video(s) to process.
-2026-03-20 01:46:37,223  INFO      ============================================================
-2026-03-20 01:46:37,223  INFO      --- (1 / 5) ---
-2026-03-20 01:46:37,224  INFO      START [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
-2026-03-20 01:46:37,225  INFO        URL      : https://youtu.be/8TZMtslA3UY?si=S8HEQ09ldkEB16rI
-2026-03-20 01:46:37,225  INFO        Saving as: 1156438752
-2026-03-20 01:46:37,225  INFO      yt-dlp starting download: https://youtu.be/8TZMtslA3UY?si=S8HEQ09ldkEB16rI
-2026-03-20 01:46:45,834  INFO      yt-dlp completed OK: https://youtu.be/8TZMtslA3UY?si=S8HEQ09ldkEB16rI
-2026-03-20 01:46:45,835  INFO      OK    [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
-2026-03-20 01:46:45,835  INFO      --- (2 / 5) ---
-2026-03-20 01:46:45,835  WARNING   NO VIDEO ID — title='5. PWC_Delhi_Background Visuals Energy transition v1.4' url='https://youtu.be/8TZMtslA3UY?si=S8HEQ09ldkEB16rI' — using 'no_id'
-2026-03-20 01:46:45,836  INFO      START [ID=no_id] 5. PWC_Delhi_Background Visuals Energy transition v1.4
-2026-03-20 01:46:45,837  INFO        URL      : https://youtu.be/8TZMtslA3UY?si=S8HEQ09ldkEB16rI
-2026-03-20 01:46:45,838  INFO        Saving as: no_id
-2026-03-20 01:46:45,838  INFO      yt-dlp starting download: https://youtu.be/8TZMtslA3UY?si=S8HEQ09ldkEB16rI
-2026-03-20 01:46:54,258  INFO      yt-dlp completed OK: https://youtu.be/8TZMtslA3UY?si=S8HEQ09ldkEB16rI
-2026-03-20 01:46:54,259  INFO      OK    [ID=no_id] 5. PWC_Delhi_Background Visuals Energy transition v1.4
-2026-03-20 01:46:54,259  INFO      --- (3 / 5) ---
-2026-03-20 01:46:54,261  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:46:54,261  INFO      --- (4 / 5) ---
-2026-03-20 01:46:54,262  INFO      START [ID=123] 5. PWC_Delhi_Background Visuals Energy transition v1.4
-2026-03-20 01:46:54,262  INFO        URL      : https://youtu.be/3_9vCamtuPY?si=nU3jmjsNdB9uTufI
-2026-03-20 01:46:54,262  INFO        Saving as: 123
-2026-03-20 01:46:54,263  INFO      yt-dlp starting download: https://youtu.be/3_9vCamtuPY?si=nU3jmjsNdB9uTufI
-2026-03-20 01:47:00,604  INFO      yt-dlp completed OK: https://youtu.be/3_9vCamtuPY?si=nU3jmjsNdB9uTufI
-2026-03-20 01:47:00,604  INFO      OK    [ID=123] 5. PWC_Delhi_Background Visuals Energy transition v1.4
-2026-03-20 01:47:00,605  INFO      --- (5 / 5) ---
-2026-03-20 01:47:00,605  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:47:00,606  INFO      ============================================================
-2026-03-20 01:47:00,606  INFO      DOWNLOAD COMPLETE — SUMMARY
-2026-03-20 01:47:00,606  INFO      ============================================================
-2026-03-20 01:47:00,606  INFO        Total      : 5
-2026-03-20 01:47:00,607  INFO        Downloaded : 3
-2026-03-20 01:47:00,607  INFO        Skipped    : 2
-2026-03-20 01:47:00,607  INFO        Failed     : 0
-2026-03-20 01:47:00,607  INFO        No URL     : 0
-2026-03-20 01:47:00,607  INFO      ------------------------------------------------------------
-2026-03-20 01:47:00,608  INFO        Output folder : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
-2026-03-20 01:47:00,611  INFO        Log file      : C:\Users\ASUS\OneDrive\Desktop\script\download_log.txt
-2026-03-20 01:47:00,612  INFO      ============================================================
-2026-03-20 01:53:59,913  INFO      ============================================================
-2026-03-20 01:53:59,914  INFO        Econ Engineering Video Downloader  v1.2.0
-2026-03-20 01:53:59,914  INFO      ============================================================
-2026-03-20 01:53:59,914  INFO      Input       : list.csv
-2026-03-20 01:53:59,915  INFO      Output      : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
-2026-03-20 01:53:59,915  INFO      Python      : 3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]
-2026-03-20 01:53:59,915  INFO      Filename Key: Video ID (primary key)
-2026-03-20 01:53:59,916  INFO      ------------------------------------------------------------
-2026-03-20 01:53:59,916  INFO      requests : OK  (v2.32.3)
-2026-03-20 01:53:59,916  INFO      openpyxl : OK  (v3.1.5)
-2026-03-20 01:53:59,916  INFO      tqdm     : OK  (v4.67.1)
-2026-03-20 01:54:00,093  INFO      yt-dlp   : OK  (v2026.03.17)
-2026-03-20 01:54:00,093  INFO      ------------------------------------------------------------
-2026-03-20 01:54:00,095  INFO      Found 6 video(s) to process.
-2026-03-20 01:54:00,095  INFO      ============================================================
-2026-03-20 01:54:00,096  INFO      --- (1 / 6) ---
-2026-03-20 01:54:00,096  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:54:00,097  INFO      --- (2 / 6) ---
-2026-03-20 01:54:00,097  WARNING   NO VIDEO ID — title='5. PWC_Delhi_Background Visuals Energy transition v1.4' url='https://youtu.be/8TZMtslA3UY?si=S8HEQ09ldkEB16rI' — using 'no_id'
-2026-03-20 01:54:00,098  INFO      SKIP  [ID=no_id] already on disk: no_id.mp4
-2026-03-20 01:54:00,098  INFO      --- (3 / 6) ---
-2026-03-20 01:54:00,098  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:54:00,099  INFO      --- (4 / 6) ---
-2026-03-20 01:54:00,100  INFO      SKIP  [ID=123] already on disk: 123.mp4
-2026-03-20 01:54:00,100  INFO      --- (5 / 6) ---
-2026-03-20 01:54:00,102  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:54:00,102  INFO      --- (6 / 6) ---
-2026-03-20 01:54:00,102  WARNING   NO VIDEO ID — title='' url='https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551' — using 'no_id'
-2026-03-20 01:54:00,103  INFO      SKIP  [ID=no_id] already on disk: no_id.mp4
-2026-03-20 01:54:00,103  INFO      ============================================================
-2026-03-20 01:54:00,103  INFO      DOWNLOAD COMPLETE — SUMMARY
-2026-03-20 01:54:00,103  INFO      ============================================================
-2026-03-20 01:54:00,103  INFO        Total      : 6
-2026-03-20 01:54:00,104  INFO        Downloaded : 0
-2026-03-20 01:54:00,104  INFO        Skipped    : 6
-2026-03-20 01:54:00,104  INFO        Failed     : 0
-2026-03-20 01:54:00,104  INFO        No URL     : 0
-2026-03-20 01:54:00,104  INFO      ------------------------------------------------------------
-2026-03-20 01:54:00,105  INFO        Output folder : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
-2026-03-20 01:54:00,107  INFO        Log file      : C:\Users\ASUS\OneDrive\Desktop\script\download_log.txt
-2026-03-20 01:54:00,110  INFO      ============================================================
-2026-03-20 01:54:31,220  INFO      ============================================================
-2026-03-20 01:54:31,220  INFO        Econ Engineering Video Downloader  v1.2.0
-2026-03-20 01:54:31,220  INFO      ============================================================
-2026-03-20 01:54:31,220  INFO      Input       : list.csv
-2026-03-20 01:54:31,222  INFO      Output      : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
-2026-03-20 01:54:31,222  INFO      Python      : 3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]
-2026-03-20 01:54:31,222  INFO      Filename Key: Video ID (primary key)
-2026-03-20 01:54:31,222  INFO      ------------------------------------------------------------
-2026-03-20 01:54:31,222  INFO      requests : OK  (v2.32.3)
-2026-03-20 01:54:31,222  INFO      openpyxl : OK  (v3.1.5)
-2026-03-20 01:54:31,222  INFO      tqdm     : OK  (v4.67.1)
-2026-03-20 01:54:31,386  INFO      yt-dlp   : OK  (v2026.03.17)
-2026-03-20 01:54:31,386  INFO      ------------------------------------------------------------
-2026-03-20 01:54:31,388  INFO      Found 6 video(s) to process.
-2026-03-20 01:54:31,388  INFO      ============================================================
-2026-03-20 01:54:31,388  INFO      --- (1 / 6) ---
-2026-03-20 01:54:31,390  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:54:31,390  INFO      --- (2 / 6) ---
-2026-03-20 01:54:31,390  WARNING   NO VIDEO ID — title='5. PWC_Delhi_Background Visuals Energy transition v1.4' url='https://youtu.be/8TZMtslA3UY?si=S8HEQ09ldkEB16rI' — using 'no_id'
-2026-03-20 01:54:31,391  INFO      SKIP  [ID=no_id] already on disk: no_id.mp4
-2026-03-20 01:54:31,392  INFO      --- (3 / 6) ---
-2026-03-20 01:54:31,392  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:54:31,392  INFO      --- (4 / 6) ---
-2026-03-20 01:54:31,393  INFO      SKIP  [ID=123] already on disk: 123.mp4
-2026-03-20 01:54:31,393  INFO      --- (5 / 6) ---
-2026-03-20 01:54:31,394  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:54:31,394  INFO      --- (6 / 6) ---
-2026-03-20 01:54:31,395  WARNING   NO VIDEO ID — title='' url='https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551' — using 'no_id'
-2026-03-20 01:54:31,396  INFO      SKIP  [ID=no_id] already on disk: no_id.mp4
-2026-03-20 01:54:31,396  INFO      ============================================================
-2026-03-20 01:54:31,396  INFO      DOWNLOAD COMPLETE — SUMMARY
-2026-03-20 01:54:31,396  INFO      ============================================================
-2026-03-20 01:54:31,396  INFO        Total      : 6
-2026-03-20 01:54:31,397  INFO        Downloaded : 0
-2026-03-20 01:54:31,397  INFO        Skipped    : 6
-2026-03-20 01:54:31,397  INFO        Failed     : 0
-2026-03-20 01:54:31,397  INFO        No URL     : 0
-2026-03-20 01:54:31,398  INFO      ------------------------------------------------------------
-2026-03-20 01:54:31,398  INFO        Output folder : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
-2026-03-20 01:54:31,399  INFO        Log file      : C:\Users\ASUS\OneDrive\Desktop\script\download_log.txt
-2026-03-20 01:54:31,399  INFO      ============================================================
-2026-03-20 01:55:06,018  INFO      ============================================================
-2026-03-20 01:55:06,019  INFO        Econ Engineering Video Downloader  v1.2.0
-2026-03-20 01:55:06,019  INFO      ============================================================
-2026-03-20 01:55:06,020  INFO      Input       : list.csv
-2026-03-20 01:55:06,020  INFO      Output      : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
-2026-03-20 01:55:06,021  INFO      Python      : 3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]
-2026-03-20 01:55:06,021  INFO      Filename Key: Video ID (primary key)
-2026-03-20 01:55:06,021  INFO      ------------------------------------------------------------
-2026-03-20 01:55:06,021  INFO      requests : OK  (v2.32.3)
-2026-03-20 01:55:06,022  INFO      openpyxl : OK  (v3.1.5)
-2026-03-20 01:55:06,022  INFO      tqdm     : OK  (v4.67.1)
-2026-03-20 01:55:06,176  INFO      yt-dlp   : OK  (v2026.03.17)
-2026-03-20 01:55:06,177  INFO      ------------------------------------------------------------
-2026-03-20 01:55:06,178  INFO      Found 6 video(s) to process.
-2026-03-20 01:55:06,179  INFO      ============================================================
-2026-03-20 01:55:06,179  INFO      --- (1 / 6) ---
-2026-03-20 01:55:06,180  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:55:06,180  INFO      --- (2 / 6) ---
-2026-03-20 01:55:06,180  WARNING   NO VIDEO ID — title='5. PWC_Delhi_Background Visuals Energy transition v1.4' url='https://youtu.be/8TZMtslA3UY?si=S8HEQ09ldkEB16rI' — using 'no_id'
-2026-03-20 01:55:06,181  INFO      SKIP  [ID=no_id] already on disk: no_id.mp4
-2026-03-20 01:55:06,181  INFO      --- (3 / 6) ---
-2026-03-20 01:55:06,182  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:55:06,182  INFO      --- (4 / 6) ---
-2026-03-20 01:55:06,183  INFO      SKIP  [ID=123] already on disk: 123.mp4
-2026-03-20 01:55:06,183  INFO      --- (5 / 6) ---
-2026-03-20 01:55:06,184  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
-2026-03-20 01:55:06,184  INFO      --- (6 / 6) ---
-2026-03-20 01:55:06,185  INFO      START [ID=147] 
-2026-03-20 01:55:06,185  INFO        URL      : https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
-2026-03-20 01:55:06,185  INFO        Saving as: 147
-2026-03-20 01:55:06,185  INFO      yt-dlp starting download: https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
-2026-03-20 01:56:06,379  INFO      yt-dlp completed OK: https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
-2026-03-20 01:56:06,380  INFO      OK    [ID=147] 
-2026-03-20 01:56:06,380  INFO      ============================================================
-2026-03-20 01:56:06,381  INFO      DOWNLOAD COMPLETE — SUMMARY
-2026-03-20 01:56:06,381  INFO      ============================================================
-2026-03-20 01:56:06,381  INFO        Total      : 6
-2026-03-20 01:56:06,381  INFO        Downloaded : 1
-2026-03-20 01:56:06,382  INFO        Skipped    : 5
-2026-03-20 01:56:06,382  INFO        Failed     : 0
-2026-03-20 01:56:06,382  INFO        No URL     : 0
-2026-03-20 01:56:06,382  INFO      ------------------------------------------------------------
-2026-03-20 01:56:06,383  INFO        Output folder : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
-2026-03-20 01:56:06,384  INFO        Log file      : C:\Users\ASUS\OneDrive\Desktop\script\download_log.txt
-2026-03-20 01:56:06,385  INFO      ============================================================
+2026-03-20 13:30:22,387  INFO      ============================================================
+2026-03-20 13:30:22,387  INFO        Econ Engineering Video Downloader  v1.2.0
+2026-03-20 13:30:22,387  INFO      ============================================================
+2026-03-20 13:30:22,388  INFO      Input       : list.csv
+2026-03-20 13:30:22,388  INFO      Output      : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:30:22,388  INFO      Python      : 3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]
+2026-03-20 13:30:22,388  INFO      Filename Key: Video ID (primary key)
+2026-03-20 13:30:22,388  INFO      ------------------------------------------------------------
+2026-03-20 13:30:22,389  INFO      requests : OK  (v2.32.3)
+2026-03-20 13:30:22,389  INFO      openpyxl : OK  (v3.1.5)
+2026-03-20 13:30:22,389  INFO      tqdm     : OK  (v4.67.1)
+2026-03-20 13:30:22,547  INFO      yt-dlp   : OK  (v2026.03.17)
+2026-03-20 13:30:22,548  INFO      ------------------------------------------------------------
+2026-03-20 13:30:22,549  INFO      Found 1 video(s) to process.
+2026-03-20 13:30:22,549  INFO      ============================================================
+2026-03-20 13:30:22,549  INFO      --- (1 / 1) ---
+2026-03-20 13:30:22,550  INFO      START [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
+2026-03-20 13:30:22,550  INFO        URL      : https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:30:22,550  INFO        Saving as: 1156438752
+2026-03-20 13:30:22,550  INFO      yt-dlp starting download: https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:34:35,186  INFO      yt-dlp completed OK: https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:34:35,195  INFO      OK    [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
+2026-03-20 13:34:35,200  INFO      ============================================================
+2026-03-20 13:34:35,206  INFO      DOWNLOAD COMPLETE — SUMMARY
+2026-03-20 13:34:35,215  INFO      ============================================================
+2026-03-20 13:34:35,216  INFO        Total      : 1
+2026-03-20 13:34:35,217  INFO        Downloaded : 1
+2026-03-20 13:34:35,218  INFO        Skipped    : 0
+2026-03-20 13:34:35,218  INFO        Failed     : 0
+2026-03-20 13:34:35,219  INFO        No URL     : 0
+2026-03-20 13:34:35,219  INFO      ------------------------------------------------------------
+2026-03-20 13:34:35,221  INFO        Output folder : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:34:35,225  INFO        Log file      : C:\Users\ASUS\OneDrive\Desktop\script\download_log.txt
+2026-03-20 13:34:35,225  INFO      ============================================================
+2026-03-20 13:36:21,957  INFO      ============================================================
+2026-03-20 13:36:21,958  INFO        Econ Engineering Video Downloader  v1.2.0
+2026-03-20 13:36:21,958  INFO      ============================================================
+2026-03-20 13:36:21,958  INFO      Input       : list.csv
+2026-03-20 13:36:21,958  INFO      Output      : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:36:21,958  INFO      Python      : 3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]
+2026-03-20 13:36:21,958  INFO      Filename Key: Video ID (primary key)
+2026-03-20 13:36:21,959  INFO      ------------------------------------------------------------
+2026-03-20 13:36:21,959  INFO      requests : OK  (v2.32.3)
+2026-03-20 13:36:21,959  INFO      openpyxl : OK  (v3.1.5)
+2026-03-20 13:36:21,959  INFO      tqdm     : OK  (v4.67.1)
+2026-03-20 13:36:22,069  INFO      yt-dlp   : OK  (v2026.03.17)
+2026-03-20 13:36:22,069  INFO      ------------------------------------------------------------
+2026-03-20 13:36:22,070  INFO      Found 2 video(s) to process.
+2026-03-20 13:36:22,070  INFO      ============================================================
+2026-03-20 13:36:22,070  INFO      --- (1 / 2) ---
+2026-03-20 13:36:22,071  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
+2026-03-20 13:36:22,071  INFO      --- (2 / 2) ---
+2026-03-20 13:36:22,071  INFO      START [ID=1156583498] DailyDispatch_002_Constance_1x1
+2026-03-20 13:36:22,071  INFO        URL      : https://player.vimeo.com/progressive_redirect/download/1156583498/rendition/1080p/dailydispatch_002_constance_1x1%20%281080p%29.mp4?loc=external&signature=102de51fd7d9a7590bea89c8601b58f86068da2d723890fd74e001712230a09b&user_id=131817551
+2026-03-20 13:36:22,071  INFO        Saving as: 1156583498
+2026-03-20 13:36:22,072  INFO      yt-dlp starting download: https://player.vimeo.com/progressive_redirect/download/1156583498/rendition/1080p/dailydispatch_002_constance_1x1%20%281080p%29.mp4?loc=external&signature=102de51fd7d9a7590bea89c8601b58f86068da2d723890fd74e001712230a09b&user_id=131817551
+2026-03-20 13:36:36,702  INFO      yt-dlp completed OK: https://player.vimeo.com/progressive_redirect/download/1156583498/rendition/1080p/dailydispatch_002_constance_1x1%20%281080p%29.mp4?loc=external&signature=102de51fd7d9a7590bea89c8601b58f86068da2d723890fd74e001712230a09b&user_id=131817551
+2026-03-20 13:36:36,702  INFO      OK    [ID=1156583498] DailyDispatch_002_Constance_1x1
+2026-03-20 13:36:36,703  INFO      ============================================================
+2026-03-20 13:36:36,704  INFO      DOWNLOAD COMPLETE — SUMMARY
+2026-03-20 13:36:36,705  INFO      ============================================================
+2026-03-20 13:36:36,706  INFO        Total      : 2
+2026-03-20 13:36:36,706  INFO        Downloaded : 1
+2026-03-20 13:36:36,708  INFO        Skipped    : 1
+2026-03-20 13:36:36,709  INFO        Failed     : 0
+2026-03-20 13:36:36,709  INFO        No URL     : 0
+2026-03-20 13:36:36,710  INFO      ------------------------------------------------------------
+2026-03-20 13:36:36,712  INFO        Output folder : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:36:36,717  INFO        Log file      : C:\Users\ASUS\OneDrive\Desktop\script\download_log.txt
+2026-03-20 13:36:36,718  INFO      ============================================================
+2026-03-20 13:42:22,538  INFO      ============================================================
+2026-03-20 13:42:22,538  INFO        Econ Engineering Video Downloader  v1.2.0
+2026-03-20 13:42:22,538  INFO      ============================================================
+2026-03-20 13:42:22,538  INFO      Input       : list.csv
+2026-03-20 13:42:22,538  INFO      Output      : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:42:22,538  INFO      Python      : 3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]
+2026-03-20 13:42:22,538  INFO      Filename Key: Video ID (primary key)
+2026-03-20 13:42:22,538  INFO      ------------------------------------------------------------
+2026-03-20 13:42:22,538  INFO      requests : OK  (v2.32.3)
+2026-03-20 13:42:22,538  INFO      openpyxl : OK  (v3.1.5)
+2026-03-20 13:42:22,538  INFO      tqdm     : OK  (v4.67.1)
+2026-03-20 13:42:22,656  INFO      yt-dlp   : OK  (v2026.03.17)
+2026-03-20 13:42:22,656  INFO      ------------------------------------------------------------
+2026-03-20 13:42:22,657  INFO      Found 2 video(s) to process.
+2026-03-20 13:42:22,658  INFO      ============================================================
+2026-03-20 13:42:22,658  INFO      --- (1 / 2) ---
+2026-03-20 13:42:22,658  INFO      SKIP  [ID=1156438752] already on disk: 1156438752.mp4
+2026-03-20 13:42:22,658  INFO      --- (2 / 2) ---
+2026-03-20 13:42:22,659  INFO      SKIP  [ID=1156583498] already on disk: 1156583498.mp4
+2026-03-20 13:42:22,659  INFO      ============================================================
+2026-03-20 13:42:22,659  INFO      DOWNLOAD COMPLETE — SUMMARY
+2026-03-20 13:42:22,659  INFO      ============================================================
+2026-03-20 13:42:22,659  INFO        Total      : 2
+2026-03-20 13:42:22,659  INFO        Downloaded : 0
+2026-03-20 13:42:22,659  INFO        Skipped    : 2
+2026-03-20 13:42:22,659  INFO        Failed     : 0
+2026-03-20 13:42:22,659  INFO        No URL     : 0
+2026-03-20 13:42:22,659  INFO      ------------------------------------------------------------
+2026-03-20 13:42:22,660  INFO        Output folder : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:42:22,661  INFO        Log file      : C:\Users\ASUS\OneDrive\Desktop\script\download_log.txt
+2026-03-20 13:42:22,661  INFO      ============================================================
+2026-03-20 13:42:38,192  INFO      ============================================================
+2026-03-20 13:42:38,192  INFO        Econ Engineering Video Downloader  v1.2.0
+2026-03-20 13:42:38,193  INFO      ============================================================
+2026-03-20 13:42:38,193  INFO      Input       : list.csv
+2026-03-20 13:42:38,193  INFO      Output      : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:42:38,193  INFO      Python      : 3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]
+2026-03-20 13:42:38,193  INFO      Filename Key: Video ID (primary key)
+2026-03-20 13:42:38,193  INFO      ------------------------------------------------------------
+2026-03-20 13:42:38,194  INFO      requests : OK  (v2.32.3)
+2026-03-20 13:42:38,194  INFO      openpyxl : OK  (v3.1.5)
+2026-03-20 13:42:38,194  INFO      tqdm     : OK  (v4.67.1)
+2026-03-20 13:42:38,290  INFO      yt-dlp   : OK  (v2026.03.17)
+2026-03-20 13:42:38,290  INFO      ------------------------------------------------------------
+2026-03-20 13:42:38,291  INFO      Found 2 video(s) to process.
+2026-03-20 13:42:38,291  INFO      ============================================================
+2026-03-20 13:42:38,292  INFO      --- (1 / 2) ---
+2026-03-20 13:42:38,292  INFO      START [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
+2026-03-20 13:42:38,292  INFO        URL      : https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:42:38,292  INFO        Saving as: 1156438752
+2026-03-20 13:42:55,029  INFO      ============================================================
+2026-03-20 13:42:55,029  INFO        Econ Engineering Video Downloader  v1.2.0
+2026-03-20 13:42:55,029  INFO      ============================================================
+2026-03-20 13:42:55,029  INFO      Input       : list.csv
+2026-03-20 13:42:55,029  INFO      Output      : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:42:55,030  INFO      Python      : 3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]
+2026-03-20 13:42:55,030  INFO      Filename Key: Video ID (primary key)
+2026-03-20 13:42:55,030  INFO      ------------------------------------------------------------
+2026-03-20 13:42:55,030  INFO      requests : OK  (v2.32.3)
+2026-03-20 13:42:55,030  INFO      openpyxl : OK  (v3.1.5)
+2026-03-20 13:42:55,030  INFO      tqdm     : OK  (v4.67.1)
+2026-03-20 13:42:55,128  INFO      yt-dlp   : OK  (v2026.03.17)
+2026-03-20 13:42:55,129  INFO      ------------------------------------------------------------
+2026-03-20 13:42:55,130  INFO      Found 2 video(s) to process.
+2026-03-20 13:42:55,130  INFO      ============================================================
+2026-03-20 13:42:55,131  INFO      --- (1 / 2) ---
+2026-03-20 13:42:55,131  INFO      START [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
+2026-03-20 13:42:55,131  INFO        URL      : https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:42:55,132  INFO        Saving as: 1156438752
+2026-03-20 13:42:55,132  INFO      yt-dlp starting download: https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:42:55,132  ERROR     yt-dlp unexpected error:
+2026-03-20 13:42:55,132  ERROR       URL   : https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:42:55,132  ERROR       Reason: module 'yt_dlp' has no attribute 'Link'
+2026-03-20 13:42:55,132  ERROR       Full traceback:
+Traceback (most recent call last):
+  File "C:\Users\ASUS\OneDrive\Desktop\script\script.py", line 156, in download_with_ytdlp
+    with yt_dlp.Link(ydl_opts) as ydl:
+    ^^^^^^^^^^^
+AttributeError: module 'yt_dlp' has no attribute 'Link'
+2026-03-20 13:42:55,134  ERROR     FAIL  [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
+2026-03-20 13:42:55,134  ERROR       URL: https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:42:55,134  INFO      --- (2 / 2) ---
+2026-03-20 13:42:55,135  INFO      SKIP  [ID=1156583498] already on disk: 1156583498.mp4
+2026-03-20 13:42:55,135  INFO      ============================================================
+2026-03-20 13:42:55,135  INFO      DOWNLOAD COMPLETE — SUMMARY
+2026-03-20 13:42:55,135  INFO      ============================================================
+2026-03-20 13:42:55,135  INFO        Total      : 2
+2026-03-20 13:42:55,135  INFO        Downloaded : 0
+2026-03-20 13:42:55,135  INFO        Skipped    : 1
+2026-03-20 13:42:55,136  INFO        Failed     : 1
+2026-03-20 13:42:55,136  INFO        No URL     : 0
+2026-03-20 13:42:55,136  INFO      ------------------------------------------------------------
+2026-03-20 13:42:55,136  INFO        Output folder : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:42:55,137  INFO        Log file      : C:\Users\ASUS\OneDrive\Desktop\script\download_log.txt
+2026-03-20 13:42:55,137  INFO      ============================================================
+2026-03-20 13:51:16,453  INFO      ============================================================
+2026-03-20 13:51:16,453  INFO        Econ Engineering Video Downloader  v1.2.0
+2026-03-20 13:51:16,453  INFO      ============================================================
+2026-03-20 13:51:16,453  INFO      Input       : list.csv
+2026-03-20 13:51:16,454  INFO      Output      : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:51:16,454  INFO      Python      : 3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]
+2026-03-20 13:51:16,454  INFO      Filename Key: Video ID (primary key)
+2026-03-20 13:51:16,454  INFO      ------------------------------------------------------------
+2026-03-20 13:51:16,454  INFO      requests : OK  (v2.32.3)
+2026-03-20 13:51:16,455  INFO      openpyxl : OK  (v3.1.5)
+2026-03-20 13:51:16,455  INFO      tqdm     : OK  (v4.67.1)
+2026-03-20 13:51:16,590  INFO      yt-dlp   : OK  (v2026.03.17)
+2026-03-20 13:51:16,591  INFO      ------------------------------------------------------------
+2026-03-20 13:51:16,592  INFO      Found 2 video(s) to process.
+2026-03-20 13:51:16,592  INFO      ============================================================
+2026-03-20 13:51:16,592  INFO      --- (1 / 2) ---
+2026-03-20 13:51:16,592  INFO      START [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
+2026-03-20 13:51:16,593  INFO        URL      : https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:51:16,593  INFO        Saving as: 1156438752
+2026-03-20 13:51:16,593  INFO      yt-dlp starting download: https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:53:32,005  INFO      yt-dlp completed OK: https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-20 13:53:32,006  INFO      OK    [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
+2026-03-20 13:53:32,007  INFO      --- (2 / 2) ---
+2026-03-20 13:53:32,008  INFO      SKIP  [ID=1156583498] already on disk: 1156583498.mp4
+2026-03-20 13:53:32,008  INFO      ============================================================
+2026-03-20 13:53:32,009  INFO      DOWNLOAD COMPLETE — SUMMARY
+2026-03-20 13:53:32,009  INFO      ============================================================
+2026-03-20 13:53:32,009  INFO        Total      : 2
+2026-03-20 13:53:32,010  INFO        Downloaded : 1
+2026-03-20 13:53:32,010  INFO        Skipped    : 1
+2026-03-20 13:53:32,010  INFO        Failed     : 0
+2026-03-20 13:53:32,010  INFO        No URL     : 0
+2026-03-20 13:53:32,011  INFO      ------------------------------------------------------------
+2026-03-20 13:53:32,011  INFO        Output folder : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-20 13:53:32,013  INFO        Log file      : C:\Users\ASUS\OneDrive\Desktop\script\download_log.txt
+2026-03-20 13:53:32,013  INFO      ============================================================
