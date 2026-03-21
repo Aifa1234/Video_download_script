@@ -37,7 +37,7 @@ Bulk downloader for ~5,000 Vimeo videos. Reads a CSV/XLSX input file, downloads 
 ## 2. Project Structure
 
 ```
-VideoDownloader/
+script/
 │
 ├── download_videos.py       
 ├── list.csv                
