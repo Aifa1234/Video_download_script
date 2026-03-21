@@ -60,7 +60,7 @@ script/
 | 2 | Logging Configuration | Dual logging — terminal + `download_log.txt` |
 | 3 | `sanitize_filename()` | Strips illegal characters from Video IDs and titles |
 | 4 | `read_input_file()` | Parses `.xlsx` or `.csv` — case-insensitive header matching |
-| 5 | `is_youtube_or_vimeo()` | Detects watch-page URLs requiring `yt-dlp` |
+| 5 | `is_vimeo()` | Detects watch-page URLs requiring `yt-dlp` |
 | 6 | `download_with_ytdlp()` | Downloads Vimeo/YouTube URLs — verbose error logging |
 | 7 | `download_direct()` | Chunked HTTP download with tqdm progress bar + retry |
 | 8 | `download_video()` | Orchestrates per-video flow — Video ID as primary key |
