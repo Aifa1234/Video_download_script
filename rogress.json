@@ -1,0 +1,19 @@
+{
+  "1156438752": {
+    "status": "failed",
+    "title": "5. PWC_Delhi_Background Visuals Energy transition v1.4",
+    "url": "https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551",
+    "reason": "Timeout — no response within 60s"
+  },
+  "1156583498": {
+    "status": "ok",
+    "title": "DailyDispatch_002_Constance_1x1",
+    "url": "https://player.vimeo.com/progressive_redirect/download/1156583498/rendition/1080p/dailydispatch_002_constance_1x1%20%281080p%29.mp4?loc=external&signature=102de51fd7d9a7590bea89c8601b58f86068da2d723890fd74e001712230a09b&user_id=131817551"
+  },
+  "115638752": {
+    "status": "failed",
+    "title": "5. PWC_Delhi_Background Visuals Energy transition v1.4",
+    "url": "https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc955",
+    "reason": "HTTP 403 — permanent failure, will not retry. Fix the URL or permissions and re-run."
+  }
+}
