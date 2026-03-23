@@ -424,7 +424,7 @@ FAILED  |  2026-03-22 13:45:01
 - Written after **every single video** — atomic write (`.tmp` → rename)
 - On restart — `ok` entries skipped, `pending`/`failed` re-attempted
 - Startup disk check — `ok` entries without files on disk reset to `pending`
-- To retry only failed: `python download_videos.py --retry-failed`
+- To retry only failed: `python script.py --retry-failed`
 
 ---
 
