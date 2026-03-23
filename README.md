@@ -130,16 +130,16 @@ C:\SCRIPT\
 
 ```bash
 # Default — reads list.csv, saves to ./downloaded_videos
-python download_videos.py
+python script.py
 
 # Custom input and output
-python download_videos.py -i list.csv -o "E:\Vimeo_Archive"
+python script.py -i list.csv -o "E:\Vimeo_Archive"
 
 # Retry only failed videos
-python download_videos.py --retry-failed
+python script.py --retry-failed
 
 # View all options
-python download_videos.py --help
+python script.py --help
 ```
 
 | Argument | Short | Default | Description |
@@ -175,14 +175,14 @@ All configuration is driven by `VIMEO_*` environment variables, eliminating hard
 $env:VIMEO_INPUT_FILE = "list.csv"
 $env:VIMEO_OUTPUT_DIR = "E:\Vimeo_Archive"
 $env:VIMEO_MAX_RETRIES = "3"
-python download_videos.py
+python script.py
 ```
 
 **CMD:**
 ```cmd
 set VIMEO_INPUT_FILE=list.csv
 set VIMEO_OUTPUT_DIR=E:\Vimeo_Archive
-python download_videos.py
+python script.py
 ```
 
 ---
