@@ -119,7 +119,7 @@ pip install requests openpyxl yt-dlp tqdm
 
 **Prepare folder:**
 ```
-C:\VideoDownloader\
+C:\SCRIPT\
 ├── download_videos.py
 └── list.csv
 ```
