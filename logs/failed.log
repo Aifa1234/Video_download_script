@@ -1,21 +1,5 @@
 ================================================================================
-FAILED  |  2026-03-22 23:50:31
-  ID          : 1156438752
-  Title       : 5. PWC_Delhi_Background Visuals Energy transition v1.4
-  Method      : requests  |  Attempts: 5/5
-  Category    : TIMEOUT
-  Retryable   : YES
---------------------------------------------------------------------------------
-  Explanation : No response within 60s. Check connection speed or increase VIMEO_TIMEOUT.
-  Raw Error   : Timeout — no response within 60s
-  Action      : Retry: python download_videos.py --retry-failed
-   Or increase: set VIMEO_TIMEOUT=120
---------------------------------------------------------------------------------
-  URL         : https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
-================================================================================
-
-================================================================================
-FAILED  |  2026-03-22 23:52:11
+FAILED  |  2026-03-23 09:29:34
   ID      : 115638752
   Title   : 5. PWC_Delhi_Background Visuals Energy transition v1.4
   Method  : requests  |  Attempts: 5/5

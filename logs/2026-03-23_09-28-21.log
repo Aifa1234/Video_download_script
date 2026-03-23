@@ -1,0 +1,69 @@
+2026-03-23 09:28:21,187  INFO      Log file : logs\2026-03-23_09-28-21.log
+2026-03-23 09:28:21,187  INFO      ============================================================
+2026-03-23 09:28:21,187  INFO        Econ Engineering Video Downloader  v3.0.0
+2026-03-23 09:28:21,188  INFO      ============================================================
+2026-03-23 09:28:21,188  INFO      Input        : list.csv
+2026-03-23 09:28:21,188  INFO      Output       : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-23 09:28:21,188  INFO      Progress file: progress.json
+2026-03-23 09:28:21,189  INFO      Log folder   : C:\Users\ASUS\OneDrive\Desktop\script\logs
+2026-03-23 09:28:21,189  INFO      Python       : 3.12.2
+2026-03-23 09:28:21,189  INFO      Filename key : ID + Title (e.g. 1156438752_PWC_Delhi.mp4)
+2026-03-23 09:28:21,189  INFO      Concurrency  : Dynamic (bandwidth-based, checked every 300s)
+2026-03-23 09:28:21,189  INFO      ------------------------------------------------------------
+2026-03-23 09:28:21,189  INFO      requests   : OK  (v2.32.3)
+2026-03-23 09:28:21,189  INFO      openpyxl   : OK  (v3.1.5)
+2026-03-23 09:28:21,189  INFO      tqdm       : OK  (v4.67.1)
+2026-03-23 09:28:21,340  INFO      yt_dlp     : OK  (v2026.03.17)
+2026-03-23 09:28:21,340  INFO      ------------------------------------------------------------
+2026-03-23 09:28:21,364  INFO      Found 3 video(s) in input file.
+2026-03-23 09:28:21,366  INFO      State — Done:0 | Failed:0 | Pending:3 | Reset:0
+2026-03-23 09:28:21,366  INFO      Remaining: 3 video(s)
+2026-03-23 09:28:21,366  INFO      ============================================================
+2026-03-23 09:28:21,379  INFO      ============================================================
+2026-03-23 09:28:21,379  INFO      INITIAL BANDWIDTH CHECK
+2026-03-23 09:28:21,379  INFO      ------------------------------------------------------------
+2026-03-23 09:28:21,379  INFO      BANDWIDTH CHECK — measuring...
+2026-03-23 09:28:21,829  WARNING   Bandwidth test failed: 403 Client Error: Forbidden for url: http://speedtest.ftp.otenet.gr/files/test1Mb.db — keeping current threads
+2026-03-23 09:28:21,830  INFO      BANDWIDTH — 0.0 Mbps (0–10 Mbps) → 1 thread(s)
+2026-03-23 09:28:21,830  INFO      THREADS UNCHANGED — staying at 1 (bandwidth: 0.0 Mbps)
+2026-03-23 09:28:21,830  INFO      ------------------------------------------------------------
+2026-03-23 09:28:21,830  INFO      Starting with 1 thread(s) at 0.0 Mbps
+2026-03-23 09:28:21,830  INFO      ============================================================
+2026-03-23 09:28:21,831  INFO      BATCH — 1 thread(s) | processing 1 video(s) | 2 remaining after this batch
+2026-03-23 09:28:21,832  INFO      START [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
+2026-03-23 09:28:21,832  INFO        URL      : https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc95562013c4c7262e&user_id=131817551
+2026-03-23 09:28:21,832  INFO        Saving as: 1156438752_5._PWC_Delhi_Background_Visuals_Energy_transition_v1.4.mp4
+2026-03-23 09:29:30,610  INFO      OK    [ID=1156438752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
+2026-03-23 09:29:30,613  INFO      PROGRESS  1/3 (33.3%) | Done:1 Skipped:0 Failed:0 | ETA:2m 18s
+2026-03-23 09:29:30,613  INFO      OVERALL  1/3 (33.3%) | threads:1 | bw:0.0 Mbps
+2026-03-23 09:29:30,614  INFO      BATCH — 1 thread(s) | processing 1 video(s) | 1 remaining after this batch
+2026-03-23 09:29:30,615  INFO      START [ID=1156583498] DailyDispatch_002_Constance_1x1
+2026-03-23 09:29:30,615  INFO        URL      : https://player.vimeo.com/progressive_redirect/download/1156583498/rendition/1080p/dailydispatch_002_constance_1x1%20%281080p%29.mp4?loc=external&signature=102de51fd7d9a7590bea89c8601b58f86068da2d723890fd74e001712230a09b&user_id=131817551
+2026-03-23 09:29:30,616  INFO        Saving as: 1156583498_DailyDispatch_002_Constance_1x1.mp4
+2026-03-23 09:29:33,946  INFO      OK    [ID=1156583498] DailyDispatch_002_Constance_1x1
+2026-03-23 09:29:33,948  INFO      PROGRESS  2/3 (66.7%) | Done:2 Skipped:0 Failed:0 | ETA:36s
+2026-03-23 09:29:33,948  INFO      OVERALL  2/3 (66.7%) | threads:1 | bw:0.0 Mbps
+2026-03-23 09:29:33,949  INFO      BATCH — 1 thread(s) | processing 1 video(s) | 0 remaining after this batch
+2026-03-23 09:29:33,949  INFO      START [ID=115638752] 5. PWC_Delhi_Background Visuals Energy transition v1.4
+2026-03-23 09:29:33,950  INFO        URL      : https://player.vimeo.com/progressive_redirect/download/1156438752/rendition/2160p/5._pwc_delhi_background_visuals_energy_transition_v1.4%20%282160p%29.mp4?loc=external&signature=52782ba91ddb24881813b954fb3d6c7945da63785ce4dffc955
+2026-03-23 09:29:33,950  INFO        Saving as: 115638752_5._PWC_Delhi_Background_Visuals_Energy_transition_v1.4.mp4
+2026-03-23 09:29:34,293  ERROR       HTTP 403 — permanent failure, will not retry. Fix the URL or permissions and re-run.
+2026-03-23 09:29:34,293  ERROR     FAIL  [ID=115638752] 5. PWC_Delhi_Background Visuals Energy transition v1.4 — HTTP 403 — permanent failure, will not retry. Fix the URL or permissions and re-run.
+2026-03-23 09:29:34,296  INFO      PROGRESS  3/3 (100.0%) | Done:2 Skipped:0 Failed:1 | ETA:0s
+2026-03-23 09:29:34,296  INFO      OVERALL  3/3 (100.0%) | threads:1 | bw:0.0 Mbps
+2026-03-23 09:29:34,297  INFO      ============================================================
+2026-03-23 09:29:34,297  INFO      DOWNLOAD COMPLETE — SUMMARY
+2026-03-23 09:29:34,297  INFO      ============================================================
+2026-03-23 09:29:34,297  INFO        Total      : 3
+2026-03-23 09:29:34,297  INFO        Downloaded : 2
+2026-03-23 09:29:34,297  INFO        Skipped    : 0
+2026-03-23 09:29:34,297  INFO        Failed     : 1
+2026-03-23 09:29:34,298  INFO        No URL     : 0
+2026-03-23 09:29:34,298  INFO      ------------------------------------------------------------
+2026-03-23 09:29:34,298  INFO        Output     : C:\Users\ASUS\OneDrive\Desktop\script\downloaded_videos
+2026-03-23 09:29:34,298  INFO        Log file   : logs\2026-03-23_09-28-21.log
+2026-03-23 09:29:34,298  INFO        Failed log : logs\failed.log
+2026-03-23 09:29:34,298  INFO        To retry   : python download_videos.py --retry-failed
+2026-03-23 09:29:34,298  INFO        Progress   : progress.json
+2026-03-23 09:29:34,298  INFO        Final BW   : 0.0 Mbps | Final threads: 1
+2026-03-23 09:29:34,298  INFO      ============================================================

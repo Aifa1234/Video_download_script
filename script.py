@@ -1,44 +1,34 @@
 # --- Standard Library Imports ------------------------------------------------
 
-import argparse                        # CLI argument parsing
-import csv                             # CSV file reading
-import json                            # progress.json read/write  ← FIX 1: moved to top level
-import logging                         # Logging framework
-import os                              # Environment variable access
-import re                              # Regex for filename sanitization
-import sys                             # System exit
-import time                            # Delays between retries
-from datetime import datetime          # Timestamps  ← FIX 1: moved to top level
-from pathlib import Path               # Cross-platform path handling
-
-# --- Third-Party Imports -----------------------------------------------------
-
-import openpyxl                        # Read Excel .xlsx files
-import requests                        # HTTP downloads
-from tqdm import tqdm                  # Progress bars
+import argparse                       
+import csv                       
+import json                          
+import logging                        
+import os                          
+import random                          
+import threading                   
+import re                              
+import shutil                          
+import sys                      
+import time                           
+from concurrent.futures import ThreadPoolExecutor, as_completed  
+from datetime import datetime       
+from urllib.parse import urlparse    
+from pathlib import Path              
+import openpyxl                     
+import requests                    
+from tqdm import tqdm             
 
 
 # =============================================================================
 # SECTION 1: GLOBAL CONFIGURATION
 # All settings readable from environment variables.
-# CLI arguments override environment variables when both are provided.
-#
-# Environment variables:
-#   VIMEO_INPUT_FILE      Path to input .csv or .xlsx file
-#   VIMEO_OUTPUT_DIR      Folder to save downloaded videos
-#   VIMEO_LOG_DIR         Folder for dated log files
-#   VIMEO_PROGRESS_FILE   Path to progress.json resume file
-#   VIMEO_MAX_RETRIES     Max retry attempts per video (int)
-#   VIMEO_RETRY_DELAY     Base delay in seconds between retries (int)
-#   VIMEO_RETRY_DELAY_429 Delay in seconds for HTTP 429/503 responses (int)
-#   VIMEO_CHUNK_SIZE      Download chunk size in bytes (int)
-#   VIMEO_TIMEOUT         HTTP request timeout in seconds (int)
 # =============================================================================
 
 DEFAULT_INPUT_FILE  = os.environ.get("VIMEO_INPUT_FILE","list.csv")
 DEFAULT_OUTPUT_DIR  = os.environ.get("VIMEO_OUTPUT_DIR","./downloaded_videos")
 LOG_DIR             = os.environ.get("VIMEO_LOG_DIR","logs")
-PROGRESS_FILE       = os.environ.get("VIMEO_PROGRESS_FILE","Progress.json")
+PROGRESS_FILE       = os.environ.get("VIMEO_PROGRESS_FILE","progress.json")
 
 MAX_RETRIES         = int(os.environ.get("VIMEO_MAX_RETRIES","5"))
 RETRY_DELAY_BASE    = int(os.environ.get("VIMEO_RETRY_DELAY","5"))
@@ -46,108 +36,99 @@ RETRY_DELAY_429     = int(os.environ.get("VIMEO_RETRY_DELAY_429","60"))
 CHUNK_SIZE          = int(os.environ.get("VIMEO_CHUNK_SIZE",str(1024 * 1024)))
 REQUEST_TIMEOUT     = int(os.environ.get("VIMEO_TIMEOUT","60"))
 
+BW_CHECK_INTERVAL   = int(os.environ.get("VIMEO_BW_INTERVAL",    "300"))   
+BW_TEST_URL         = os.environ.get(
+    "VIMEO_BW_TEST_URL",
+    "http://speedtest.ftp.otenet.gr/files/test1Mb.db"                      
+)
+MAX_FILENAME_LEN    = 180                                               
+
+# Bandwidth → thread count thresholds (Mbps)
+# Format: (min_mbps, max_mbps, threads)
+BANDWIDTH_TIERS = [
+    (200, float("inf"), 10),   # > 200 Mbps  → 10 threads
+    (100, 200,           6),   # 100–200 Mbps →  6 threads
+    ( 50, 100,           4),   #  50–100 Mbps →  4 threads
+    ( 10,  50,           2),   #  10–50 Mbps  →  2 threads
+    (  0,  10,           1),   # < 10 Mbps    →  1 thread (serial)
+]
+
 
 # =============================================================================
 # SECTION 2: HTTP STATUS CODE CLASSIFICATION
-#
-# Three tiers — each handled differently in download_direct():
-#
-#   NO_RETRY_CODES        — Permanent client errors. The same request will
-#                           always fail. Do not retry. Log and move on.
-#
-#   RETRY_WITH_WAIT_CODES — Rate limiting or temporary overload. Server is
-#                           alive but throttling. Wait RETRY_DELAY_429 seconds
-#                           before retrying.  ← FIX 2: 503 now handled here
-#
-#   RETRYABLE_CODES       — Transient server errors. Server-side problem that
-#                           may resolve. Retry with exponential backoff.
-#                           ← FIX 3: all 5xx codes now explicitly handled
 # =============================================================================
 
 NO_RETRY_CODES = {
-
-    # ── 4xx Client Errors — problem is with the request itself ───────────────
-    # These will never succeed without fixing the URL or permissions.
-
-    400,   # Bad Request          — malformed URL or invalid parameters
-    401,   # Unauthorized         — authentication required, token expired
-    403,   # Forbidden            — video is private, access denied, IP blocked
-    404,   # Not Found            — video deleted, URL invalid, or link expired
-    405,   # Method Not Allowed   — wrong HTTP method used
-    406,   # Not Acceptable       — server cannot produce requested format
-    407,   # Proxy Auth Required  — proxy authentication needed
-    409,   # Conflict             — resource state conflict
-    410,   # Gone                 — resource permanently removed from server
-    411,   # Length Required      — Content-Length header required
-    412,   # Precondition Failed  — server precondition not met
-    413,   # Payload Too Large    — request body too large
-    414,   # URI Too Long         — URL is too long for server
-    415,   # Unsupported Media    — media type not supported
-    416,   # Range Not Satisfiable — byte range request invalid
-    451,   # Unavailable Legal    — content blocked for legal reasons (DMCA)
+    400,   # Bad Request          
+    401,   # Unauthorized       
+    403,   # Forbidden           
+    404,   # Not Found           
+    405,   # Method Not Allowed  
+    406,   # Not Acceptable      
+    407,   # Proxy Auth Required  
+    409,   # Conflict            
+    410,   # Gone               
+    411,   # Length Required     
+    412,   # Precondition Failed  
+    413,   # Payload Too Large    
+    414,   # URI Too Long        
+    415,   # Unsupported Media   
+    416,   # Range Not Satisfiable 
+    451,   # Unavailable Legal    
 
 }
 
 RETRY_WITH_WAIT_CODES = {
 
-    # ── Rate limiting / temporary overload ───────────────────────────────────
-    # Server is throttling requests. Wait RETRY_DELAY_429 seconds then retry.
-
-    429,   # Too Many Requests    — standard rate limit response
-    503,   # Service Unavailable  — server temporarily overloaded  ← FIX 2
+    429,   # Too Many Requests   
+    503,   # Service Unavailable  
 
 }
 
 RETRYABLE_CODES = {
 
-    # ── 5xx Server Errors — problem is on the server side ────────────────────
-    # These are temporary. The server may recover. Retry with backoff.
-
-    500,   # Internal Server Error   — generic server crash, usually temporary
-    502,   # Bad Gateway             — upstream server invalid response
-    504,   # Gateway Timeout         — upstream server timed out
-    507,   # Insufficient Storage    — server disk space issue
-    508,   # Loop Detected           — server redirect loop
-    509,   # Bandwidth Exceeded      — server bandwidth limit hit
-    520,   # Unknown Error           — Cloudflare: unexpected origin response
-    521,   # Web Server Down         — Cloudflare: origin server offline
-    522,   # Connection Timed Out    — Cloudflare: origin connection timed out
-    523,   # Origin Unreachable      — Cloudflare: cannot route to origin
-    524,   # Timeout                 — Cloudflare: connection timed out
-    525,   # SSL Handshake Failed    — Cloudflare: SSL negotiation failed
-    526,   # Invalid SSL Cert        — Cloudflare: invalid SSL cert at origin
-    527,   # Railgun Error           — Cloudflare: Railgun connection error
-    530,   # Site Frozen             — Cloudflare: origin 1xxx error
+    500,   # Internal Server Error  
+    502,   # Bad Gateway           
+    504,   # Gateway Timeout         
+    507,   # Insufficient Storage  
+    508,   # Loop Detected         
+    509,   # Bandwidth Exceeded      
+    520,   # Unknown Error         
+    521,   # Web Server Down         
+    522,   # Connection Timed Out    
+    523,   # Origin Unreachable   
+    524,   # Timeout                 
+    525,   # SSL Handshake Failed   
+    526,   # Invalid SSL Cert      
+    527,   # Railgun Error       
+    530,   # Site Frozen             
 
 }
-
 
 # =============================================================================
 # SECTION 3: LOGGING CONFIGURATION
 # Each run creates a new dated log file inside the logs/ folder.
 # A separate failed.log is maintained with structured failure reports.
-# All logs also print to terminal simultaneously.
 # =============================================================================
 
 def setup_logging(log_dir: str) -> tuple[logging.Logger, str]:
-    Path(log_dir).mkdir(parents=True, exist_ok=True)           # Create logs/ if missing
+    Path(log_dir).mkdir(parents=True, exist_ok=True)        
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")   # e.g. 2026-03-22_13-45-01
-    log_file  = str(Path(log_dir) / f"{timestamp}.log")        # Full path to this run's log
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")   
+    log_file  = str(Path(log_dir) / f"{timestamp}.log")        
 
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s  %(levelname)-8s  %(message)s",
         handlers=[
-            logging.FileHandler(log_file, encoding="utf-8"),   # Write to dated log file
-            logging.StreamHandler(sys.stdout),                  # Also print to terminal
+            logging.FileHandler(log_file, encoding="utf-8"),   
+            logging.StreamHandler(sys.stdout),              
         ],
     )
 
     log = logging.getLogger(__name__)
     log.info("Log file : %s", log_file)
     return log, log_file
-
 
 def log_failed(
     log_dir:     str,
@@ -165,8 +146,6 @@ def log_failed(
     ts           = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sep          = "=" * 80
     dash         = "-" * 80
-
-    # ── HTTP failures — short table-style entry ───────────────────────────────
 
     HTTP_MESSAGES = {
         400: ("Bad Request",           "Fix the URL — malformed or invalid parameters.",         False),
@@ -216,7 +195,6 @@ def log_failed(
         )
 
     elif http_status and http_status >= 400:
-        # Unknown HTTP code — still keep it short
         retryable   = http_status >= 500
         retry_label = "YES" if retryable else "NO"
         report = (
@@ -233,8 +211,6 @@ def log_failed(
         )
 
     else:
-        # ── Non-HTTP failures — detailed explanation ──────────────────────────
-
         if "timeout" in reason_lower:
             category    = "TIMEOUT"
             explanation = f"No response within {REQUEST_TIMEOUT}s. Check connection speed or increase VIMEO_TIMEOUT."
@@ -302,35 +278,55 @@ def log_failed(
             f"{sep}\n\n"
         )
 
-    with open(failed_log, "a", encoding="utf-8") as f:
-        f.write(report)
+    with _failed_lock:                                      
+        with open(failed_log, "a", encoding="utf-8") as f:
+            f.write(report)
 
+# =============================================================================
+# SECTION 4: Progress Tracking (progress.json)
+# Track every Video ID with a status so the script can resume
+# =============================================================================
 
 def load_progress(progress_file: str) -> dict:
-    """
-    Load progress.json or return empty dict if file not found.
-
-    Args:
-        progress_file (str): Path to progress.json
-
-    Returns:
-        dict: {video_id: {"status": str, "title": str, "url": str}}
-    """
     path = Path(progress_file)
-    if path.exists():
+    if not path.exists():                                
+        return {}
+
+    try:
         with open(path, encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+            data = json.load(f)                               
+        if not isinstance(data, dict):                       
+            raise ValueError(f"Expected dict, got {type(data).__name__}")
+        return data                                          
+
+    except json.JSONDecodeError as exc:                      
+        corrupt_path = path.with_suffix(".corrupt")           
+        path.rename(corrupt_path)                           
+        logging.getLogger(__name__).warning(
+            "progress.json is corrupt (%s) — renamed to %s — starting fresh",
+            exc, corrupt_path.name,
+        )
+        return {}                                             
+
+    except (OSError, ValueError) as exc:                     
+        logging.getLogger(__name__).warning(
+            "Could not read progress.json (%s) — starting fresh", exc
+        )
+        return {}
+
+
+_progress_lock = threading.Lock()                             
+_failed_lock   = threading.Lock()                              
 
 
 def save_progress(progress_file: str, progress: dict):
     path     = Path(progress_file)
-    tmp_path = path.with_suffix(".tmp")                        # Write to .tmp first
+    tmp_path = path.with_suffix(".tmp")                     
 
-    with open(tmp_path, "w", encoding="utf-8") as f:
-        json.dump(progress, f, indent=2, ensure_ascii=False)
-
-    tmp_path.replace(path)                                     # Atomic rename — safe on all OS
+    with _progress_lock:                                      
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(progress, f, indent=2, ensure_ascii=False)
+        tmp_path.replace(path)                              
 
 
 def init_progress(rows: list[dict], progress: dict) -> dict:
@@ -346,15 +342,37 @@ def init_progress(rows: list[dict], progress: dict) -> dict:
 
 
 # =============================================================================
-# SECTION 5: HELPER — sanitize_filename()
+# SECTION 5a: HELPER — sanitize_filename()
 # Strips characters illegal in Windows/macOS/Linux filenames.
 # =============================================================================
 
 def sanitize_filename(name: str) -> str:
-    name = re.sub(r'[\\/*?:"<>|]', "_", name)                 # Replace illegal chars
-    name = name.strip().strip(".")                             # Remove edge whitespace/dots
+    name = re.sub(r'[\\/*?:"<>|]', "_", name)               
+    name = name.strip().strip(".")                           
     return name or "untitled"
 
+# =============================================================================
+# SECTION 5b: HELPER — build_filename()
+# Builds output filename as: <VideoID>_<VideoTitle>.<ext>
+# =============================================================================
+
+def build_filename(vid_id: str, title: str, ext: str = "") -> str:
+    safe_id    = sanitize_filename(vid_id) if vid_id else "no_id"  
+    safe_title = sanitize_filename(title)                          
+
+    safe_title = re.sub(r"\s+", "_", safe_title)                   
+    safe_title = re.sub(r"_+", "_", safe_title)                  
+
+    if safe_title and safe_title != "untitled":
+        stem = f"{safe_id}_{safe_title}"                            
+    else:
+        stem = safe_id                                            
+
+    max_stem = MAX_FILENAME_LEN - len(ext)                         
+    if len(stem) > max_stem:
+        stem = stem[:max_stem].rstrip("_")                      
+
+    return f"{stem}{ext}"                                          
 
 # =============================================================================
 # SECTION 6: CORE — read_input_file()
@@ -362,7 +380,6 @@ def sanitize_filename(name: str) -> str:
 # =============================================================================
 
 def read_input_file(path: str) -> list[dict]:
-
     path = Path(path)
     rows = []
 
@@ -403,23 +420,127 @@ def read_input_file(path: str) -> list[dict]:
 
 
 # =============================================================================
-# SECTION 7: HELPER — is_direct_download()
+# SECTION 7a: HELPER — is_valid_url()
+# Validates URL format before attempting download.
+# =============================================================================
+
+def is_valid_url(url: str) -> bool:
+    if not url or not isinstance(url, str):                   
+        return False
+    try:
+        result = urlparse(url.strip())                        
+        return (                                               
+            result.scheme in ("http", "https")                 
+            and bool(result.netloc)                          
+            and len(url) < 2048                               
+        )
+    except Exception:
+        return False                                           
+
+# =============================================================================
+# SECTION 7b: HELPER — is_direct_download()
 # Detects whether a URL is a direct file link (requests) or
 # a watch-page link (yt-dlp).
 # =============================================================================
 
 def is_direct_download(url: str) -> bool:
     direct_signals = (
-        "progressive_redirect",        # Vimeo CDN direct link
-        "player.vimeo.com/external",   # Vimeo external player direct link
-        ".mp4", ".mov", ".webm",       # Common video file extensions
+        "progressive_redirect",        
+        "player.vimeo.com/external",   
+        ".mp4", ".mov", ".webm",     
         ".mkv", ".avi",
     )
     return any(s in url.lower() for s in direct_signals)
 
+# =============================================================================
+# SECTION 8a: BANDWIDTH MONITOR — BandwidthMonitor
+# Measures current internet bandwidth by timing a small test download.
+# =============================================================================
+
+class BandwidthMonitor:
+    def __init__(self, log: logging.Logger):
+        self.log            = log
+        self.current_mbps   = 0.0                              
+        self.current_threads = 1                         
+        self.last_check     = 0.0                             
+        self.lock           = threading.Lock()                 
+
+    def measure_bandwidth(self) -> float:
+        try:
+            start    = time.time()                            
+            response = requests.get(
+                BW_TEST_URL,
+                timeout=(5, 30),                              
+                stream=True,
+            )
+            response.raise_for_status()
+
+            bytes_received = 0
+            for chunk in response.iter_content(chunk_size=65536): 
+                if chunk:
+                    bytes_received += len(chunk)
+
+            elapsed = time.time() - start                   
+            if elapsed <= 0 or bytes_received == 0:
+                return 0.0
+
+            mbps = (bytes_received * 8) / (elapsed * 1_000_000)  
+            return round(mbps, 2)
+
+        except Exception as exc:
+            self.log.warning("Bandwidth test failed: %s — keeping current threads", exc)
+            return self.current_mbps                          
+
+    def get_threads_for_bandwidth(self, mbps: float) -> int:
+        for min_mbps, max_mbps, threads in BANDWIDTH_TIERS:
+            if min_mbps <= mbps < max_mbps:
+                return threads
+        return 1                                             
+
+    def check(self, force: bool = False) -> tuple[float, int, bool]:
+        now = time.time()
+        if not force and (now - self.last_check) < BW_CHECK_INTERVAL:
+            return self.current_mbps, self.current_threads, False
+
+        with self.lock:
+            self.log.info("-" * 60)
+            self.log.info("BANDWIDTH CHECK — measuring...")
+
+            mbps           = self.measure_bandwidth()
+            new_threads    = self.get_threads_for_bandwidth(mbps)
+            changed        = new_threads != self.current_threads
+            old_threads    = self.current_threads
+
+            self.current_mbps    = mbps
+            self.current_threads = new_threads
+            self.last_check      = time.time()
+
+            tier_label = next(
+                (f">{t[0]} Mbps" if t[1] == float("inf") else f"{t[0]}–{t[1]} Mbps"
+                 for t in BANDWIDTH_TIERS if t[0] <= mbps < t[1]),
+                "unknown"
+            )
+            self.log.info(
+                "BANDWIDTH — %.1f Mbps (%s) → %d thread(s)",
+                mbps, tier_label, new_threads,
+            )
+            if changed:
+                self.log.info(
+                    "THREADS CHANGED — %d → %d (bandwidth: %.1f Mbps)",
+                    old_threads, new_threads, mbps,
+                )
+            else:
+                self.log.info(
+                    "THREADS UNCHANGED — staying at %d (bandwidth: %.1f Mbps)",
+                    new_threads, mbps,
+                )
+
+            self.log.info("-" * 60)
+            return mbps, new_threads, changed
+
 
 # =============================================================================
-# SECTION 8: DOWNLOAD — download_with_ytdlp()
+# SECTION 8b: DOWNLOAD — download_with_ytdlp()
 # Downloads Vimeo/YouTube watch-page URLs via yt-dlp.
 # =============================================================================
 
@@ -429,7 +550,7 @@ def download_with_ytdlp(
     log:         logging.Logger,
 ) -> tuple[bool, str]:
     try:
-        import yt_dlp                                          # Lazy import
+        import yt_dlp                                        
     except ImportError:
         log.error("yt-dlp not installed — run: pip install yt-dlp")
         return False, "yt-dlp not installed"
@@ -451,26 +572,34 @@ def download_with_ytdlp(
                 return False, "yt-dlp returned no info — URL may be private or deleted"
         return True, "ok"
 
-    except yt_dlp.utils.DownloadError as exc:
+    except yt_dlp.utils.DownloadError as exc:                 
         reason = f"yt-dlp DownloadError: {exc}"
         log.error("  %s", reason)
         return False, reason
 
-    except Exception as exc:
+    except yt_dlp.utils.ExtractorError as exc:                 
+        reason = f"yt-dlp ExtractorError: {exc}"
+        log.error("  %s", reason)
+        return False, reason
+
+    except yt_dlp.utils.PostProcessingError as exc:           
+        reason = f"yt-dlp PostProcessingError: {exc}"
+        log.error("  %s", reason)
+        return False, reason
+
+    except KeyboardInterrupt:                                
+        raise                                                  
+
+    except Exception as exc:                                 
         reason = f"yt-dlp unexpected error: {exc}"
         log.error("  %s", reason)
-        log.exception("  Full traceback:")
+        log.exception("  Full traceback:")                     
         return False, reason
 
 
 # =============================================================================
 # SECTION 9: DOWNLOAD — download_direct()
-# Chunked HTTP download with full three-tier HTTP status handling.
-# Retries with exponential backoff. Cleans partial files on failure.
-#
-# FIX 2: RETRY_WITH_WAIT_CODES (429, 503) now checked explicitly
-# FIX 3: RETRYABLE_CODES (5xx) now checked explicitly
-# FIX 4: reason variable initialised before loop to prevent UnboundLocalError
+# Called per-thread by the parallel download engine.
 # =============================================================================
 
 def download_direct(
@@ -478,7 +607,7 @@ def download_direct(
     output_path: Path,
     log:         logging.Logger,
 ) -> tuple[bool, str]:
-    reason = "Download did not start"                          # FIX 4: initialise before loop
+    reason = "Download did not start"                        
 
     for attempt in range(1, MAX_RETRIES + 1):
 
@@ -486,63 +615,57 @@ def download_direct(
             with requests.get(
                 url,
                 stream=True,
-                timeout=(10, REQUEST_TIMEOUT),                 # (connect_timeout, read_timeout)
+                timeout=(10, REQUEST_TIMEOUT),             
             ) as r:
-
-                # ── Tier 1: Permanent failures — stop immediately ─────────
-
                 if r.status_code in NO_RETRY_CODES:
                     reason = (
                         f"HTTP {r.status_code} — permanent failure, will not retry. "
                         f"Fix the URL or permissions and re-run."
                     )
                     log.error("  %s", reason)
-                    return False, reason                       # No retry
-
-                # ── Tier 2: Rate limiting — wait longer then retry ────────
-                # FIX 2: Now uses RETRY_WITH_WAIT_CODES set (429 AND 503)
-
+                    return False, reason                      
                 if r.status_code in RETRY_WITH_WAIT_CODES:
                     reason = f"HTTP {r.status_code} — rate limited or temporarily unavailable"
                     log.warning(
                         "  HTTP %d — waiting %ds before retry (attempt %d/%d)",
                         r.status_code, RETRY_DELAY_429, attempt, MAX_RETRIES,
                     )
-                    time.sleep(RETRY_DELAY_429)                # Wait much longer
-                    continue                                   # Retry after long wait
-
-                # ── Tier 3: Transient server errors — retry with backoff ──
-                # FIX 3: Now explicitly catches all RETRYABLE_CODES (500, 502, 504, 5xx...)
-
+                    time.sleep(RETRY_DELAY_429)              
+                    continue                         
                 if r.status_code in RETRYABLE_CODES:
                     reason = (
                         f"HTTP {r.status_code} — transient server error, "
                         f"retrying (attempt {attempt}/{MAX_RETRIES})"
                     )
                     log.warning("  %s", reason)
-                    output_path.unlink(missing_ok=True)        # Clean up partial file
+                    output_path.unlink(missing_ok=True)
                     if attempt < MAX_RETRIES:
-                        delay = RETRY_DELAY_BASE * attempt
-                        log.warning("  Retrying in %ds...", delay)
+                        delay = (RETRY_DELAY_BASE * attempt) + random.uniform(0, 2) 
+                        log.warning("  Retrying in %.1fs...", delay)
                         time.sleep(delay)
-                    continue                                   # Retry with backoff
-
-                # ── Any other unrecognised 4xx — treat as permanent ───────
-
+                    continue
                 if 400 <= r.status_code < 500:
                     reason = (
                         f"HTTP {r.status_code} — unrecognised client error, "
                         f"treating as permanent failure"
                     )
                     log.error("  %s", reason)
-                    return False, reason                       # No retry
+                    return False, reason
 
-                r.raise_for_status()                           # Raise for anything else
-
-                # ── Download with per-file progress bar ───────────────────
+                r.raise_for_status()
 
                 total = int(r.headers.get("Content-Length", 0))
 
+                if total > 0:
+                    free_bytes = shutil.disk_usage(output_path.parent).free
+                    if free_bytes < total:
+                        reason = (
+                            f"Insufficient disk space — "
+                            f"need {total/1e6:.1f} MB, "
+                            f"only {free_bytes/1e6:.1f} MB free"
+                        )
+                        log.error("  DISK SPACE: %s", reason)
+                        return False, reason               
                 with (
                     open(output_path, "wb") as f,
                     tqdm(
@@ -562,19 +685,34 @@ def download_direct(
                             bar.update(len(chunk))
                             downloaded += len(chunk)
 
-                # ── Validate download completeness ────────────────────────
-
                 if total > 0 and downloaded < total:
                     reason = f"Incomplete download: received {downloaded:,} of {total:,} bytes"
                     log.warning("  %s — retrying", reason)
                     output_path.unlink(missing_ok=True)
-                    time.sleep(RETRY_DELAY_BASE * attempt)
+                    delay = (RETRY_DELAY_BASE * attempt) + random.uniform(0, 2)  
+                    time.sleep(delay)
                     continue
 
-                return True, "ok"                              # Success
+                actual_size = output_path.stat().st_size if output_path.exists() else 0
+                if actual_size < 1024:                        
+                    reason = (
+                        f"File integrity failed — "
+                        f"only {actual_size} bytes on disk after download"
+                    )
+                    log.warning("  %s — retrying", reason)
+                    output_path.unlink(missing_ok=True)
+                    delay = (RETRY_DELAY_BASE * attempt) + random.uniform(0, 2)  
+                    time.sleep(delay)
+                    continue
+
+                return True, "ok"                              
 
         except requests.exceptions.Timeout:
             reason = f"Timeout — no response within {REQUEST_TIMEOUT}s"
+            log.warning("  Attempt %d/%d — %s", attempt, MAX_RETRIES, reason)
+
+        except requests.exceptions.SSLError as exc:            
+            reason = f"SSL error: {exc}"
             log.warning("  Attempt %d/%d — %s", attempt, MAX_RETRIES, reason)
 
         except requests.exceptions.ConnectionError as exc:
@@ -585,21 +723,25 @@ def download_direct(
             reason = f"HTTP error: {exc}"
             log.warning("  Attempt %d/%d — %s", attempt, MAX_RETRIES, reason)
 
-        except Exception as exc:
+        except OSError as exc:                                
+            reason = f"File system error: {exc}"
+            log.error("  Attempt %d/%d — %s", attempt, MAX_RETRIES, reason)
+            output_path.unlink(missing_ok=True)
+            return False, reason                               
+
+        except Exception as exc:                               
             reason = f"Unexpected error: {exc}"
             log.error("  Attempt %d/%d — %s", attempt, MAX_RETRIES, reason)
+            log.exception("  Full traceback:")                 
 
-        # ── Retry cleanup ─────────────────────────────────────────────────
-
-        output_path.unlink(missing_ok=True)                    # Delete partial file
+        output_path.unlink(missing_ok=True)                 
 
         if attempt < MAX_RETRIES:
-            delay = RETRY_DELAY_BASE * attempt                 # Exponential backoff
-            log.warning("  Retrying in %ds... (%d/%d)", delay, attempt, MAX_RETRIES)
+            delay = (RETRY_DELAY_BASE * attempt) + random.uniform(0, 2)
+            log.warning("  Retrying in %.1fs... (%d/%d)", delay, attempt, MAX_RETRIES)
             time.sleep(delay)
 
-    return False, reason                                       # All retries exhausted
-
+    return False, reason                                   
 
 # =============================================================================
 # SECTION 10: ORCHESTRATOR — download_video()
@@ -615,7 +757,6 @@ def download_video(
     log_dir:       str,
     log:           logging.Logger,
 ) -> str:
-
     url    = str(row.get("download_link") or "").strip()
     title  = str(row.get("title")         or "").strip()
     vid_id = str(row.get("video_id")      or "").strip()
@@ -634,15 +775,25 @@ def download_video(
         save_progress(progress_file, progress)
         return "no_url"
 
-    safe_id = sanitize_filename(vid_id)
+    if not is_valid_url(url):
+        reason = f"Invalid URL format — '{url}' is not a valid http/https URL"
+        log.error("  INVALID URL [ID=%s]: %s", vid_id, url)
+        progress[vid_id] = {"status": "failed", "title": title, "url": url, "reason": reason}
+        save_progress(progress_file, progress)
+        log_failed(log_dir=log_dir, video_id=vid_id, title=title,
+                   url=url, reason=reason, method="none", attempts=0)
+        return "failed"
 
     if is_direct_download(url):
-        ext         = Path(url.split("?")[0]).suffix or ".mp4"
-        output_path = output_dir / f"{safe_id}{ext}"
+        ext         = Path(url.split("?")[0]).suffix or ".mp4"  
+        filename    = build_filename(vid_id, title, ext)        
+        output_path = output_dir / filename
     else:
-        output_path = output_dir / safe_id
+        filename    = build_filename(vid_id, title, "")          
+        output_path = output_dir / filename
 
-    existing = list(output_dir.glob(f"{safe_id}.*"))
+    safe_id  = sanitize_filename(vid_id) if vid_id else "no_id"
+    existing = list(output_dir.glob(f"{safe_id}_*.*")) or list(output_dir.glob(f"{safe_id}.*"))
     if existing:
         log.info("SKIP  [ID=%s] already on disk: %s", vid_id, existing[0].name)
         progress[vid_id] = {"status": "ok", "title": title, "url": url}
@@ -665,7 +816,6 @@ def download_video(
         log.error("FAIL  [ID=%s] %s — %s", vid_id, title, reason)
         progress[vid_id] = {"status": "failed", "title": title, "url": url, "reason": reason}
 
-        # Extract HTTP status from reason string if present
         http_match  = re.search(r"HTTP (\d{3})", reason)
         http_status = int(http_match.group(1)) if http_match else 0
         method      = "requests" if is_direct_download(url) else "yt-dlp"
@@ -680,19 +830,18 @@ def download_video(
             attempts    = MAX_RETRIES,
             http_status = http_status,
         )
-        output_path.unlink(missing_ok=True)                    # Clean up partial file
+        output_path.unlink(missing_ok=True)                    
 
     save_progress(progress_file, progress)
     return "ok" if success else "failed"
 
 
 # =============================================================================
-# SECTION 11: OVERALL PROGRESS DISPLAY
+# SECTION 11: THREAD-SAFE OVERALL PROGRESS DISPLAY
 # Persistent progress bar: files done/total, % complete, ETA.
 # =============================================================================
 
 class OverallProgress:
-
     def __init__(self, total: int, log: logging.Logger):
         self.total      = total
         self.done       = 0
@@ -700,6 +849,7 @@ class OverallProgress:
         self.skipped    = 0
         self.start_time = time.time()
         self.log        = log
+        self.lock       = threading.Lock()                     
         self.bar        = tqdm(
             total=total,
             unit="file",
@@ -711,13 +861,13 @@ class OverallProgress:
         )
 
     def update(self, result: str, elapsed_secs: float):
-        self.done += 1
-        if result == "failed":
-            self.failed += 1
-        elif result in ("skipped", "no_url"):
-            self.skipped += 1
-
-        self.bar.update(1)
+        with self.lock:                                  
+            self.done += 1
+            if result == "failed":
+                self.failed += 1
+            elif result in ("skipped", "no_url"):
+                self.skipped += 1
+            self.bar.update(1)
 
         elapsed_total = time.time() - self.start_time
         avg_per_file  = elapsed_total / self.done
@@ -747,15 +897,16 @@ class OverallProgress:
 
 
 # =============================================================================
-# SECTION 12: ENTRY POINT — main()
+# SECTION 12: ENTRY POINT 
 # =============================================================================
 
 def main():
 
     global LOG_DIR, PROGRESS_FILE, MAX_RETRIES, RETRY_DELAY_BASE
     global RETRY_DELAY_429, CHUNK_SIZE, REQUEST_TIMEOUT
-# --- Step 1: Parse CLI arguments -----------------------------------------
- 
+
+    # --- Step 1: Parse CLI arguments -----------------------------------------
+
     _epilog = (
         "Environment variables (all overridden by CLI args):\n"
         "  VIMEO_INPUT_FILE       Input .csv or .xlsx file\n"
@@ -773,9 +924,9 @@ def main():
         "  python download_videos.py -i list.csv -o E:/Vimeo_Archive\n"
         "  python download_videos.py --retry-failed\n"
     )
- 
+
     parser = argparse.ArgumentParser(
-        description="Econ Engineering — Vimeo Video Bulk Downloader v2.2.0",
+        description="Econ Engineering — Vimeo Video Bulk Downloader v3.0.0",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=_epilog,
     )
@@ -790,9 +941,10 @@ def main():
     parser.add_argument("--retry-failed",  action="store_true",
                         help="Re-attempt only videos marked as failed in progress.json")
     args = parser.parse_args()
- 
+
     LOG_DIR       = args.log_dir
     PROGRESS_FILE = args.progress_file
+
     # --- Step 2: Logging + output dir ----------------------------------------
 
     log, log_file = setup_logging(args.log_dir)
@@ -802,14 +954,15 @@ def main():
     # --- Step 3: Startup banner ----------------------------------------------
 
     log.info("=" * 60)
-    log.info("  Econ Engineering Video Downloader  v2.2.0")
+    log.info("  Econ Engineering Video Downloader  v3.0.0")
     log.info("=" * 60)
     log.info("Input        : %s", args.input)
     log.info("Output       : %s", output_dir.resolve())
     log.info("Progress file: %s", PROGRESS_FILE)
     log.info("Log folder   : %s", Path(LOG_DIR).resolve())
     log.info("Python       : %s", sys.version.split()[0])
-    log.info("Filename key : Video ID (primary key)")
+    log.info("Filename key : ID + Title (e.g. 1156438752_PWC_Delhi.mp4)")
+    log.info("Concurrency  : Dynamic (bandwidth-based, checked every %ds)", BW_CHECK_INTERVAL)
     log.info("-" * 60)
 
     # --- Step 4: Library check -----------------------------------------------
@@ -849,7 +1002,6 @@ def main():
     progress = load_progress(PROGRESS_FILE)
     progress = init_progress(rows, progress)
 
-    # Disk verification — reset 'ok' entries whose files are missing on disk
     reset_count = 0
     for vid_id, entry in progress.items():
         if entry.get("status") == "ok":
@@ -892,15 +1044,83 @@ def main():
 
     # --- Step 9: Download loop -----------------------------------------------
 
-    counts  = {"ok": 0, "skipped": 0, "failed": 0, "no_url": 0}
-    overall = OverallProgress(len(rows), log)
+    counts   = {"ok": 0, "skipped": 0, "failed": 0, "no_url": 0}
+    overall  = OverallProgress(len(rows), log)
 
-    for i, row in enumerate(rows, start=1):
-        log.info("--- (%d / %d) ---", i, len(rows))
-        t_start = time.time()
-        result  = download_video(row, output_dir, progress, PROGRESS_FILE, LOG_DIR, log)
-        counts[result] += 1
-        overall.update(result, time.time() - t_start)
+    # --- Bandwidth monitor — initial check before starting loop --------------
+
+    bw_monitor = BandwidthMonitor(log)
+    log.info("=" * 60)
+    log.info("INITIAL BANDWIDTH CHECK")
+    mbps, n_threads, _ = bw_monitor.check(force=True)         # Force check immediately
+    log.info("Starting with %d thread(s) at %.1f Mbps", n_threads, mbps)
+    log.info("=" * 60)
+
+    # --- Parallel download loop with dynamic concurrency ---------------------
+
+    total_rows    = len(rows)
+    completed     = 0                                         
+
+    try:
+        remaining = list(rows)                                
+
+        while remaining:
+
+            _, n_threads, changed = bw_monitor.check()
+            batch_size = n_threads                          
+
+            batch    = remaining[:batch_size]
+            remaining = remaining[batch_size:]
+
+            log.info(
+                "BATCH — %d thread(s) | processing %d video(s) | %d remaining after this batch",
+                n_threads, len(batch), len(remaining),
+            )
+
+            with ThreadPoolExecutor(max_workers=n_threads) as executor:
+                future_to_row = {
+                    executor.submit(
+                        download_video,
+                        row,
+                        output_dir,
+                        progress,
+                        PROGRESS_FILE,
+                        LOG_DIR,
+                        log,
+                    ): row
+                    for row in batch
+                }
+
+                for future in as_completed(future_to_row):
+                    row = future_to_row[future]
+                    t_start = time.time()
+                    try:
+                        result = future.result()               
+                    except Exception as exc:
+                        vid_id = str(row.get("video_id","")).strip()
+                        log.error("Thread error for [ID=%s]: %s", vid_id, exc)
+                        result = "failed"
+
+                    counts[result] += 1
+                    completed += 1
+                    overall.update(result, time.time() - t_start)
+                    log.info(
+                        "OVERALL  %d/%d (%.1f%%) | threads:%d | bw:%.1f Mbps",
+                        completed, total_rows,
+                        (completed / total_rows) * 100,
+                        n_threads, bw_monitor.current_mbps,
+                    )
+
+    except KeyboardInterrupt:
+        overall.close()
+        log.warning("")
+        log.warning("=" * 60)
+        log.warning("INTERRUPTED — download stopped by user (Ctrl+C)")
+        log.warning("Progress saved — resume by running the same command again.")
+        log.warning("=" * 60)
+        log.info("Partial results — Downloaded:%d Skipped:%d Failed:%d",
+                 counts["ok"], counts["skipped"], counts["failed"])
+        sys.exit(0)
 
     overall.close()
 
@@ -921,8 +1141,8 @@ def main():
         log.info("  Failed log : %s", str(Path(LOG_DIR) / "failed.log"))
         log.info("  To retry   : python download_videos.py --retry-failed")
     log.info("  Progress   : %s", PROGRESS_FILE)
+    log.info("  Final BW   : %.1f Mbps | Final threads: %d", bw_monitor.current_mbps, bw_monitor.current_threads)
     log.info("=" * 60)
-
 
 if __name__ == "__main__":
     main()
